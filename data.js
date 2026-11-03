@@ -7,7 +7,7 @@ window.HYROX_DATA = {
 
   athletes: [
     { id: "성택", color: "#2f6fde" },
-    { id: "현정", color: "#d4473a" },
+    { id: "현정", color: "#7b52c9" },
     { id: "유진", color: "#1f9d6b" },
     { id: "진우", color: "#b07a12" },
   ],
