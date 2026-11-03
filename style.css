@@ -136,6 +136,28 @@ table.grid { border-collapse: collapse; width: 100%; min-width: 560px; font-size
 .insights p { margin: 0; }
 .insights b { font-weight: 600; }
 
+/* Tiers */
+.tier { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; font-family: var(--font-display); font-weight: 700; font-size: 16px; color: #fff; }
+.tier.S { background: #b8860b; }
+.tier.A { background: var(--good); }
+.tier.B { background: #3d5a80; }
+.tier.C { background: #8a94a6; }
+.tier-scale { position: relative; margin: 6px 0 64px; }
+.tier-scale .bands { display: flex; height: 34px; border-radius: 8px; overflow: hidden; }
+.tier-scale .bands span { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #fff; }
+.tier-scale .mark { position: absolute; top: -6px; bottom: -6px; width: 3px; background: var(--ink); border-radius: 2px; }
+.tier-scale .mark b { position: absolute; top: 46px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-family: var(--font-display); font-size: 14px; }
+.tier-scale .mark.ghost { background: var(--accent); }
+.tier-scale .mark.ghost b { color: var(--accent); }
+.tier-finish-text { margin: 0 0 18px; font-size: 14px; color: var(--muted); }
+.tier-table td.th { font-family: var(--font-display); font-size: 16px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tier-table td.mine { white-space: nowrap; }
+.tier-table td.mine .num { font-size: 18px; font-weight: 700; margin-left: 8px; vertical-align: middle; }
+.tier-notes { margin-top: 14px; font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+.tier-notes p { margin: 0; }
+.tier-notes a { color: inherit; }
+.tier-notes ul { margin: 0; padding-left: 18px; }
+
 /* Target */
 .target .save { color: var(--good); font-family: var(--font-display); font-weight: 600; font-size: 16px; }
 .target .zero { color: var(--muted); }

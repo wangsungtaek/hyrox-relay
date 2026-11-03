@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <header class="top">
@@ -46,6 +46,16 @@
         <p class="sub">구간 = 앞 달리기(800m, 스키는 1000m) + 스테이션 + 200m. 칸 안 숫자는 스테이션 단독 시간. 초록 테두리는 역대 최고.</p>
       </div>
       <div class="table-scroll"><table class="grid" id="stationTable"></table></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>혼성 릴레이 티어</h2>
+        <p class="sub">S 엘리트 · A 상위권 · B 평균권 · C 평균 이하. 최근 회차 기록 기준.</p>
+      </div>
+      <div id="tierFinish"></div>
+      <div class="table-scroll"><table class="grid tier-table" id="tierTable"></table></div>
+      <div class="tier-notes" id="tierNotes"></div>
     </section>
 
     <section class="panel">
@@ -120,7 +130,7 @@
     <p>측정 방식: 각 구간 800m 달리기 → 스테이션 → 200m 달리기. 스키 구간만 앞 달리기 1000m (1차는 1200m를 한 번에). 대회 거리 환산은 초과한 200m를 같은 페이스로 뺀 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
   </footer>
 
-  <script src="data.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="data.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

@@ -66,6 +66,7 @@
     renderTrend();
     renderBreakdown();
     renderStationTable();
+    renderTiers();
     renderAthletes();
     renderInsights();
     renderTarget();
@@ -193,6 +194,62 @@
     $("stationTable").innerHTML = head + `<tbody>${body}</tbody>` + foot;
   }
 
+  // ---------- 티어 ----------
+  function tierOf(sec, t) {
+    if (sec <= toSec(t.S)) return "S";
+    if (sec <= toSec(t.A)) return "A";
+    if (sec <= toSec(t.B)) return "B";
+    return "C";
+  }
+  const badge = (k) => `<span class="tier ${k}">${k}</span>`;
+  // 대회 거리 환산 기록의 달리기 시간 (8km)
+  function raceRunSec(stats) {
+    return stats.r8 + stats.r2 - (stats.total - stats.race);
+  }
+
+  function renderTiers() {
+    const T = D.tiers;
+    const last = rounds[rounds.length - 1];
+    const st = roundStats(last);
+    const rox = toSec(T.roxzone[0].time);
+    const est = st.race + rox;
+
+    // 완주 기록 스케일 (40분~90분)
+    const lo = 40 * 60, hi = 90 * 60;
+    const pos = (s) => Math.min(Math.max(((s - lo) / (hi - lo)) * 100, 0), 100);
+    const edges = [lo, toSec(T.finish.S), toSec(T.finish.A), toSec(T.finish.B), hi];
+    const bands = ["S", "A", "B", "C"].map((k, i) => `<span class="tier ${k}" style="width:${pos(edges[i + 1]) - pos(edges[i])}%;height:auto;border-radius:0">${k} ${i < 3 ? `~${fmt(edges[i + 1])}` : `${fmt(edges[3])}~`}</span>`).join("");
+    $("tierFinish").innerHTML = `
+      <p class="tier-finish-text">완주 기록 기준: 환산 기록 <b>${fmt(st.race)}</b> ${badge(tierOf(st.race, T.finish))}
+        · 록스존 ${T.roxzone[0].time}을 더한 대회 예상 <b>${fmt(est)}</b> ${badge(tierOf(est, T.finish))}</p>
+      <div class="tier-scale">
+        <div class="bands">${bands}</div>
+        <div class="mark" style="left:${pos(st.race)}%"><b>환산 ${fmt(st.race)}</b></div>
+        <div class="mark ghost" style="left:${pos(est)}%"><b style="top:62px">대회 예상 ${fmt(est)}</b></div>
+      </div>`;
+
+    // 종목별
+    const rows = D.stations.map((s, i) => {
+      const t = T.station[s.id];
+      const mine = toSec(last.legs[i].station);
+      return `<tr><td class="st">${s.name}<small>${s.en}</small></td>
+        <td class="th">${t.S}</td><td class="th">${t.A}</td><td class="th">${t.B}</td>
+        <td class="mine">${badge(tierOf(mine, t))}<span class="num">${last.legs[i].station}</span></td></tr>`;
+    }).join("");
+    const pace = raceRunSec(st) / 8;
+    const runRow = `<tr><td class="st">달리기<small>km당 평균 페이스 (8km 환산)</small></td>
+      <td class="th">${T.runPerKm.S}</td><td class="th">${T.runPerKm.A}</td><td class="th">${T.runPerKm.B}</td>
+      <td class="mine">${badge(tierOf(pace, T.runPerKm))}<span class="num">${fmt(Math.round(pace))}</span></td></tr>`;
+    $("tierTable").innerHTML = `<thead><tr><th>종목</th><th>S 이내</th><th>A 이내</th><th>B 이내</th><th>${esc(last.label)} 기록</th></tr></thead>
+      <tbody>${rows}${runRow}</tbody>`;
+
+    $("tierNotes").innerHTML = `
+      <p>스테이션 티어는 개인전 엘리트·평균(약 90분대) 기록을 남녀 평균한 값입니다. 혼성 릴레이만 따로 낸 종목별 통계는 공개된 것이 없어 추정치이며, 남자 선수 기록은 실제보다 유리하게, 여자 선수 기록은 불리하게 나올 수 있습니다.</p>
+      <p>썰매 종목은 연습 장비·바닥·무게가 대회와 다르면 시간이 크게 달라집니다. 연습 기록이 대회보다 빠르게 나올 수 있습니다.</p>
+      <p>완주 티어는 혼성 릴레이 결과(서울 2025 1:14:01이 112팀 중 상위 43%, 엘리트 54분 이내)를 기준으로 잡았습니다. 연습 기록에는 록스존(교대·이동) 시간이 빠져 있어 실제 대회에서는 ${T.roxzone.map((r) => r.time).join("~")} 정도가 더해집니다.</p>
+      <p>출처: ${D.tierSources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(" · ")}</p>`;
+  }
+
   // ---------- 선수 카드 ----------
   function renderAthletes() {
     const last = rounds[rounds.length - 1];
@@ -243,8 +300,16 @@
     out.push(["up", topUp.map((x) => `<b>${x.s.name}</b> ${fmtDelta(x.d)}`).join(", ") + " 구간이 가장 많이 좋아졌습니다."]);
 
     if (gap > 0) {
-      out.push(["fix", `환산 기록 기준 목표까지 <b>${fmt(gap)}</b> 남았습니다. 8구간 기준 <b>구간당 ${Math.ceil(gap / 8)}초</b>만 줄이면 됩니다. 실제 대회는 록스존 이동·터치 시간이 더해지므로 환산 기록 <b>59:00~59:30</b>을 목표로 잡는 게 안전합니다.`]);
+      out.push(["fix", `환산 기록 기준 목표까지 <b>${fmt(gap)}</b> 남았습니다. 8구간 기준 <b>구간당 ${Math.ceil(gap / 8)}초</b>만 줄이면 됩니다 (록스존 제외 기준).`]);
     }
+
+    // 티어
+    const tierStations = D.stations.map((s, i) => ({ s, k: tierOf(toSec(last.legs[i].station), D.tiers.station[s.id]) }));
+    const strong = tierStations.filter((x) => x.k === "S").map((x) => x.s.name);
+    const weak = tierStations.filter((x) => x.k === "C" || x.k === "B").map((x) => `${x.s.name}(${x.k})`);
+    if (strong.length) out.push(["up", `혼성 릴레이 기준 S티어 종목: <b>${strong.join(", ")}</b>. 이미 엘리트 수준이라 지금 페이스를 유지하는 게 목표입니다.`]);
+    if (weak.length) out.push(["fix", `B·C티어 종목: <b>${weak.join(", ")}</b>. 티어를 한 단계만 올려도 시간이 가장 크게 줄어드는 곳입니다.`]);
+    out.push(["fix", `연습 기록에는 록스존(교대·이동)이 빠져 있습니다. 실제 혼성 릴레이에서는 ${D.tiers.roxzone.map((r) => r.time).join("~")}가 더해지므로, 대회에서 60분 안에 들어오려면 환산 기록이 <b>${fmt(GOAL - toSec(D.tiers.roxzone[0].time))}</b> 안쪽이어야 합니다. 교대 위치를 미리 정하고 터치 연습을 하면 록스존을 1분 이상 줄일 수 있습니다.`]);
 
     out.push(["fix", `런지와 월볼은 하체가 지친 상태에서 하는 마지막 두 스테이션이라 시간이 가장 많이 걸립니다. 런지는 보폭을 일정하게 유지하고, 월볼은 10~15회 단위로 쉬는 지점을 미리 정해 두면 줄일 여지가 큽니다.`]);
 

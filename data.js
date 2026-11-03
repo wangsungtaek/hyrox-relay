@@ -75,6 +75,36 @@ window.HYROX_DATA = {
     },
   ],
 
+  // 혼성 릴레이 티어 (S/A/B 상한, 넘으면 C). 조사 근거는 tierSources 참고.
+  // 스테이션: Rox Lyfe 개인전 엘리트·평균(약 90분대) 기록을 남녀 평균 → S=엘리트, B=평균, A=중간값.
+  // 혼성 릴레이는 남녀 2명씩이고 한 사람이 스테이션 2개만 하므로 이 기준이 대체로 맞는다.
+  tiers: {
+    finish: { S: "54:00", A: "65:00", B: "80:00" },
+    runPerKm: { S: "3:45", A: "4:15", B: "4:55" },
+    station: {
+      ski: { S: "4:00", A: "4:17", B: "4:34" },
+      push: { S: "2:53", A: "3:18", B: "3:44" },
+      pull: { S: "3:34", A: "5:04", B: "6:34" },
+      burpee: { S: "2:46", A: "3:55", B: "5:04" },
+      row: { S: "4:14", A: "4:34", B: "4:54" },
+      carry: { S: "1:47", A: "2:13", B: "2:39" },
+      lunge: { S: "3:19", A: "4:21", B: "5:24" },
+      wallball: { S: "4:08", A: "5:34", B: "6:59" },
+    },
+    // 실제 혼성 릴레이 록스존(교대·이동) 시간 예
+    roxzone: [
+      { label: "서울 2025 혼성 릴레이 (1:14:01, 112팀 중 48위)", time: "5:47" },
+      { label: "인천 2024 혼성 릴레이 (1:23:25, 39팀 중 29위)", time: "7:03" },
+    ],
+  },
+  tierSources: [
+    { label: "Rox Lyfe – HYROX Average vs Elite 종목별 기록", url: "https://roxlyfe.com/hyrox-from-average-to-elite/" },
+    { label: "Hyranking – 서울 2025 혼성 릴레이 결과", url: "https://hyranking.com/result/seoul-2025-LR3MS4JI40569A" },
+    { label: "Hyranking – 인천 2024 혼성 릴레이 결과", url: "https://hyranking.com/result/incheon-2024-JGDMS4JIAD44C" },
+    { label: "Gym Mikolo – HYROX 릴레이 형식·평균 기록", url: "https://gym-mikolo.com/blogs/guides/hyrox-relay-format-rules-weights-and-team-training" },
+    { label: "HYROX DataLab – 종목별 평균 기록", url: "https://hyroxdatalab.com/articles/average-hyrox-station-times" },
+  ],
+
   // 1시간 언더용 목표 스플릿. 선수(a)는 다음 측정 배치.
   // 런지 성택→유진, 월볼 유진→성택으로 변경 (두 사람 모두 첫 시도라 목표는 임시)
   target: [
