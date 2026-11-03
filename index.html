@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <header class="top">
@@ -56,6 +56,16 @@
       <div id="tierFinish"></div>
       <div class="table-scroll"><table class="grid tier-table" id="tierTable"></table></div>
       <div class="tier-notes" id="tierNotes"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>국내 대회 혼성 릴레이 기록</h2>
+        <p class="sub">작년·올해 국내 HYROX 혼성 릴레이 전체 팀 기록. 점 하나가 한 팀입니다.</p>
+      </div>
+      <div class="ev-cards" id="evCards"></div>
+      <div class="chart" id="evChart"></div>
+      <div class="tier-notes" id="evNotes"></div>
     </section>
 
     <section class="panel">
@@ -130,7 +140,8 @@
     <p>측정 방식: 각 구간 800m 달리기 → 스테이션 → 200m 달리기. 스키 구간만 앞 달리기 1000m (1차는 1200m를 한 번에). 대회 거리 환산은 초과한 200m를 같은 페이스로 뺀 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
   </footer>
 
-  <script src="data.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <script src="data.js?v=4"></script>
+  <script src="events.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>

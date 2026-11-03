@@ -67,6 +67,7 @@
     renderBreakdown();
     renderStationTable();
     renderTiers();
+    renderEvents();
     renderAthletes();
     renderInsights();
     renderTarget();
@@ -248,6 +249,72 @@
       <p>썰매 종목은 연습 장비·바닥·무게가 대회와 다르면 시간이 크게 달라집니다. 연습 기록이 대회보다 빠르게 나올 수 있습니다.</p>
       <p>완주 티어는 혼성 릴레이 결과(서울 2025 1:14:01이 112팀 중 상위 43%, 엘리트 54분 이내)를 기준으로 잡았습니다. 연습 기록에는 록스존(교대·이동) 시간이 빠져 있어 실제 대회에서는 ${T.roxzone.map((r) => r.time).join("~")} 정도가 더해집니다.</p>
       <p>출처: ${D.tierSources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(" · ")}</p>`;
+  }
+
+  // ---------- 국내 대회 기록 ----------
+  // 우리 팀 대회 예상 = 환산 기록 + 록스존(서울 2025 중위권 팀 기준)
+  function estimate() {
+    const st = roundStats(rounds[rounds.length - 1]);
+    const rox = toSec(D.tiers.roxzone[0].time);
+    return { total: st.race + rox, run: raceRunSec(st) + rox, station: st.st };
+  }
+  // 그 기록이면 몇 위인지 (같은 기록은 앞 순위로)
+  function rankOf(list, sec) {
+    return list.filter((x) => x < sec).length + 1;
+  }
+
+  function renderEvents() {
+    const E = window.HYROX_EVENTS || [];
+    if (!E.length) return;
+    const me = estimate();
+    $("evCards").innerHTML = E.map((e) => {
+      const tot = e.teams.map((t) => t[0] + t[1]);
+      const n = tot.length;
+      const g = rankOf(tot, GOAL), m = rankOf(tot, me.total);
+      const pct = (r) => Math.max(1, Math.round((r / n) * 100));
+      return `<article class="ev">
+        <h3><a href="${e.url}" target="_blank" rel="noopener">${e.name}</a><small>${e.date.replace(/-/g, ".")} · ${n}팀</small></h3>
+        <dl><dt>1위</dt><dd>${e.best}</dd><dt>상위 10%</dt><dd>${e.p10}</dd><dt>중간 (50%)</dt><dd>${e.p50}</dd>
+          <dt>60분 안 완주</dt><dd>${tot.filter((x) => x < GOAL).length}팀</dd></dl>
+        <div class="rank"><span class="goal">목표 ${D.goal}이면 <b>${g}위</b> (상위 ${pct(g)}%)</span>
+          <span class="est">대회 예상 ${fmt(me.total)}이면 <b>${m}위</b> (상위 ${pct(m)}%)</span></div>
+      </article>`;
+    }).join("");
+
+    // 분포 차트: 행마다 대회, 점마다 팀
+    const W = 640, rowH = 46, L = 74, R = 16, T = 10, B = 28;
+    const H = T + rowH * E.length + B;
+    const lo = 50 * 60, hi = 100 * 60;
+    const x = (s) => L + ((Math.min(Math.max(s, lo), hi) - lo) / (hi - lo)) * (W - L - R);
+    let grid = "";
+    for (let m = 50; m <= 100; m += 10) {
+      grid += `<line x1="${x(m * 60)}" x2="${x(m * 60)}" y1="${T}" y2="${H - B}" stroke="var(--line)"/>
+        <text x="${x(m * 60)}" y="${H - 8}" text-anchor="middle">${m}분</text>`;
+    }
+    const rows = E.map((e, i) => {
+      const cy = T + rowH * i + rowH / 2;
+      const dots = e.teams.map((t, k) => {
+        const jitter = ((k * 37) % 11 - 5) * 1.6;
+        return `<circle cx="${x(t[0] + t[1]).toFixed(1)}" cy="${(cy + jitter).toFixed(1)}" r="2.6" fill="var(--muted)" opacity=".55"/>`;
+      }).join("");
+      return `<text x="0" y="${cy + 4}" style="fill:var(--ink);font-weight:600">${e.name}</text>${dots}`;
+    }).join("");
+    $("evChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="국내 대회 혼성 릴레이 팀 기록 분포">
+      ${grid}${rows}
+      <line x1="${x(GOAL)}" x2="${x(GOAL)}" y1="${T - 4}" y2="${H - B}" stroke="var(--good)" stroke-width="2" stroke-dasharray="5 4"/>
+      <line x1="${x(me.total)}" x2="${x(me.total)}" y1="${T - 4}" y2="${H - B}" stroke="var(--accent)" stroke-width="2"/>
+      </svg>
+      <div class="legend"><span><i style="background:var(--good)"></i>목표 ${D.goal}</span><span><i style="background:var(--accent)"></i>우리 대회 예상 ${fmt(me.total)}</span><span><i style="background:var(--muted)"></i>참가 팀</span></div>`;
+
+    // 달리기·스테이션을 나눠서 비교 (가장 최근 대회 기준)
+    const ev = E[E.length - 1];
+    const runs = ev.teams.map((t) => t[0]), sts = ev.teams.map((t) => t[1]);
+    const rr = rankOf(runs, me.run), sr = rankOf(sts, me.station);
+    $("evNotes").innerHTML = `
+      <p>60분 안에 들어온 팀은 대회별로 ${E.map((e) => `${e.name} ${e.teams.filter((t) => t[0] + t[1] < GOAL).length}팀`).join(", ")}입니다. <b>1시간 언더는 혼성 릴레이에서 상위 5% 안쪽, 시상권에 가까운 기록</b>입니다.</p>
+      <p>${ev.name} 기준으로 나눠 보면, 우리 스테이션 합계 ${fmt(me.station)}는 ${ev.teams.length}팀 중 <b>${sr}위</b>, 달리기+록스존 예상 ${fmt(me.run)}는 <b>${rr}위</b> 수준입니다. 스테이션은 이미 최상위권이라 달리기와 교대에서 줄이는 것이 1시간 언더의 핵심입니다.</p>
+      <p>우리 대회 예상은 환산 기록 ${fmt(roundStats(rounds[rounds.length - 1]).race)}에 록스존 ${D.tiers.roxzone[0].time}를 더한 값이고, 연습 썰매 기록이 대회보다 빠를 수 있어 실제로는 조금 더 걸릴 수 있습니다.</p>
+      <p>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name} 혼성 릴레이</a>`).join(" · ")} (2026.11.03 수집)</p>`;
   }
 
   // ---------- 선수 카드 ----------
