@@ -187,7 +187,10 @@
       const d1 = runDist(l, i, r), d2 = l.run200 ? run2Dist(l, r) : 0;
       return d2 ? `${d1}+${d2}m` : `${d1}m`;
     };
-    const head = `<thead><tr><th>스테이션</th>${rounds.map((r) => `<th>${esc(r.label)}</th>`).join("")}<th>첫→최근</th></tr></thead>`;
+    const n = rounds.length;
+    const deltaCell = (d) => `<td><span class="delta ${d < 0 ? "good" : d > 0 ? "bad" : ""}">${fmtDelta(d)}</span></td>`;
+    const prevLabel = n > 1 ? `${esc(rounds[n - 2].label)}→${esc(rounds[n - 1].label)}` : "";
+    const head = `<thead><tr><th>스테이션</th>${rounds.map((r) => `<th>${esc(r.label)}</th>`).join("")}<th>첫→최근</th>${n > 1 ? `<th>${prevLabel}</th>` : ""}</tr></thead>`;
     const body = D.stations.map((s, i) => {
       const exact = rounds.map((r) => legRace(r.legs[i], i, r));
       const times = exact.map(Math.round);
@@ -201,14 +204,13 @@
           <span class="m">${chip(l.a)} 스테이션 ${l.station || "-"}</span>
           <span class="m ${times[k] !== raw ? "diff" : ""}">${times[k] === raw ? "실측 동일" : `실측 ${fmt(raw)}`} · 달리기 ${legDist(l, i, r)}</span></div></td>`;
       }).join("");
-      const d = times[times.length - 1] - times[0];
       return `<tr><td class="st">${s.name}<small>${s.en}</small></td>${cells}
-        <td><span class="delta ${d < 0 ? "good" : d > 0 ? "bad" : ""}">${fmtDelta(d)}</span></td></tr>`;
+        ${deltaCell(times[n - 1] - times[0])}${n > 1 ? deltaCell(times[n - 1] - times[n - 2]) : ""}</tr>`;
     }).join("");
     const st = rounds.map(roundStats);
     const tot = st.map((x) => x.race);
     const foot = `<tfoot><tr><td>합계<small style="display:block;font-weight:400;color:var(--muted)">환산 / 실측</small></td>${st.map((x) => `<td><span class="num" style="font-size:20px">${fmt(x.race)}</span><small style="display:block;font-weight:400;color:var(--muted)">실측 ${fmt(x.total)} · ${roundRunKm(rounds[st.indexOf(x)])}km</small></td>`).join("")}
-      <td><span class="delta good">${fmtDelta(tot[tot.length - 1] - tot[0])}</span></td></tr></tfoot>`;
+      ${deltaCell(tot[n - 1] - tot[0])}${n > 1 ? deltaCell(tot[n - 1] - tot[n - 2]) : ""}</tr></tfoot>`;
     $("stationTable").innerHTML = head + `<tbody>${body}</tbody>` + foot;
   }
 
