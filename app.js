@@ -189,12 +189,14 @@
     };
     const head = `<thead><tr><th>스테이션</th>${rounds.map((r) => `<th>${esc(r.label)}</th>`).join("")}<th>첫→최근</th></tr></thead>`;
     const body = D.stations.map((s, i) => {
-      const times = rounds.map((r) => Math.round(legRace(r.legs[i], i, r)));
-      const best = Math.min(...times);
+      const exact = rounds.map((r) => legRace(r.legs[i], i, r));
+      const times = exact.map(Math.round);
+      // 한 행에 최고 기록은 하나만: 같은 기록이면 최근 회차
+      const bestK = exact.reduce((b, v, k) => (v <= exact[b] ? k : b), 0);
       const cells = rounds.map((r, k) => {
         const l = r.legs[i];
         const raw = legTotal(l);
-        return `<td><div class="cell ${times[k] === best ? "best" : ""}">
+        return `<td><div class="cell ${k === bestK ? "best" : ""}">
           <span class="t">${fmt(times[k])}</span>
           <span class="m">${chip(l.a)} 스테이션 ${l.station || "-"}</span>
           <span class="m">실측 ${fmt(raw)} · 달리기 ${legDist(l, i, r)}</span></div></td>`;
