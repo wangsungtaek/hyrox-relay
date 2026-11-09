@@ -40,20 +40,27 @@
     const p = legParts(leg);
     return p.r8 + p.st + p.r2;
   }
-  // 앞 달리기 거리 (기본 800m, 스키 구간 1000m, 회차별 예외는 leg.runDist)
-  function runDist(leg, i) {
-    return leg.runDist || D.stations[i].runDist || 800;
+  // 앞 달리기 거리: 구간 지정 → 회차 지정 → 스테이션 기본(스키 1000m) → 800m
+  function runDist(leg, i, round) {
+    return leg.runDist || (round && round.runDist) || D.stations[i].runDist || 800;
   }
-  // 대회처럼 구간당 달리기 1km로 맞춘 시간. 초과 거리는 앞 달리기 페이스로 뺀다.
-  function legRace(leg, i) {
+  // 뒤 달리기 거리: 구간 지정 → 회차 지정 → 200m
+  function run2Dist(leg, round) {
+    return leg.run2Dist || (round && round.run2Dist) || 200;
+  }
+  // 대회처럼 구간당 달리기 1km로 맞춘 시간. 거리 차이는 그 구간 달리기 평균 페이스로 보정한다.
+  function legRace(leg, i, round) {
     const p = legParts(leg);
-    const dist = runDist(leg, i);
-    const extra = dist + (leg.run200 ? 200 : 0) - 1000;
-    return legTotal(leg) - (extra > 0 && p.r8 ? (p.r8 * extra) / dist : 0);
+    const dist = runDist(leg, i, round) + (leg.run200 ? run2Dist(leg, round) : 0);
+    const run = p.r8 + p.r2;
+    return run ? legTotal(leg) - (run * (dist - 1000)) / dist : legTotal(leg);
+  }
+  function roundRunKm(r) {
+    return r.legs.reduce((s, l, i) => s + runDist(l, i, r) + (l.run200 ? run2Dist(l, r) : 0), 0) / 1000;
   }
   function roundStats(r) {
     let r8 = 0, st = 0, r2 = 0, race = 0;
-    r.legs.forEach((l, i) => { const p = legParts(l); r8 += p.r8; st += p.st; r2 += p.r2; race += legRace(l, i); });
+    r.legs.forEach((l, i) => { const p = legParts(l); r8 += p.r8; st += p.st; r2 += p.r2; race += legRace(l, i, r); });
     return { r8, st, r2, total: r8 + st + r2, race: Math.round(race) };
   }
 
@@ -164,17 +171,18 @@
     const a = stats[0], b = stats[stats.length - 1];
     const d = (k) => `<b>${fmtDelta(b[k] - a[k])}</b>`;
     $("breakdown").innerHTML = rows + `
-      <div class="legend"><span><i class="seg-run"></i>앞 달리기 (800m, 스키 구간 1000m)</span><span><i class="seg-st"></i>스테이션 ×8</span><span><i class="seg-200"></i>뒤 200m 달리기</span></div>
+      <div class="legend"><span><i class="seg-run"></i>앞 달리기</span><span><i class="seg-st"></i>스테이션 ×8</span><span><i class="seg-200"></i>뒤 달리기</span></div>
       <div class="bd-delta">
         <div>앞 달리기 변화 (${esc(rounds[0].label)}→${esc(rounds[rounds.length - 1].label)})${d("r8")}</div>
         <div>스테이션 변화${d("st")}</div>
-        <div>200m 달리기 변화${d("r2")}</div>
+        <div>뒤 달리기 변화${d("r2")}</div>
       </div>`;
   }
 
   // ---------- 스테이션 표 ----------
   function renderStationTable() {
-    const head = `<thead><tr><th>스테이션</th>${rounds.map((r) => `<th>${esc(r.label)}</th>`).join("")}<th>첫→최근</th></tr></thead>`;
+    const fmtDist = (r) => `${r.runDist || 800}+${r.run2Dist || 200}`;
+    const head = `<thead><tr><th>스테이션</th>${rounds.map((r) => `<th>${esc(r.label)} <small>${fmtDist(r)}m</small></th>`).join("")}<th>첫→최근</th></tr></thead>`;
     const body = D.stations.map((s, i) => {
       const times = rounds.map((r) => legTotal(r.legs[i]));
       const best = Math.min(...times);
@@ -185,8 +193,7 @@
           <span class="m">${chip(l.a)} 스테이션 ${l.station || "-"}</span></div></td>`;
       }).join("");
       const d = times[times.length - 1] - times[0];
-      const runNote = s.runDist ? `<small>앞 달리기 ${s.runDist}m</small>` : "";
-      return `<tr><td class="st">${s.name}<small>${s.en}</small>${runNote}</td>${cells}
+      return `<tr><td class="st">${s.name}<small>${s.en}</small></td>${cells}
         <td><span class="delta ${d < 0 ? "good" : d > 0 ? "bad" : ""}">${fmtDelta(d)}</span></td></tr>`;
     }).join("");
     const tot = rounds.map((r) => roundStats(r).total);
@@ -325,7 +332,7 @@
       const sum = legs.reduce((s, x) => s + legTotal(x.l), 0);
       // 앞 달리기를 km당 페이스로 맞춰 평균
       const avg = rounds.map((r) => {
-        const xs = r.legs.map((l, i) => (l.a === a.id && toSec(l.run800) ? (toSec(l.run800) * 1000) / runDist(l, i) : null)).filter((v) => v != null);
+        const xs = r.legs.map((l, i) => (l.a === a.id && toSec(l.run800) ? (toSec(l.run800) * 1000) / runDist(l, i, r) : null)).filter((v) => v != null);
         return xs.length ? xs.reduce((s, v) => s + v, 0) / xs.length : null;
       });
       return `<article class="ath" style="--c:${a.color}">
@@ -359,7 +366,10 @@
 
     out.push(["up", `전체 <b>${fmt(a.total)} → ${fmt(b.total)}</b>로 ${fmt(a.total - b.total)} 줄었습니다. 이 중 스테이션이 ${fmt(a.st - b.st)}, 달리기가 ${fmt(a.r8 + a.r2 - b.r8 - b.r2)}입니다. 기술이 붙으면서 스테이션에서 가장 크게 줄었습니다.`]);
 
-    out.push(["info", `연습에서는 스키 구간 앞 달리기를 1000m로 해서 전체 달리기가 8.2km입니다 (1차는 스키 구간 1200m를 한 번에). 대회는 구간마다 1km씩 총 8km라, 초과 200m를 같은 페이스로 빼면 ${esc(last.label)}는 <b>${fmt(b.race)}</b>에 해당합니다. 목표 비교는 이 환산 기록으로 합니다.`]);
+    const km = roundRunKm(last);
+    out.push(["info", km === 8
+      ? `${esc(last.label)}는 달리기 총 8km로 대회와 거리가 같아 환산 없이 비교합니다.`
+      : `${esc(last.label)}는 달리기 총 ${km}km라 (1~3차는 스키 구간 앞 달리기 1000m), 대회 거리 8km로 맞추면 <b>${fmt(b.race)}</b>에 해당합니다. 목표 비교는 이 환산 기록으로 합니다.`]);
 
     // 가장 많이 줄어든 스테이션
     const deltas = D.stations.map((s, i) => ({ s, d: legTotal(last.legs[i]) - legTotal(first.legs[i]), i }));
@@ -380,9 +390,13 @@
 
     out.push(["fix", `런지와 월볼은 하체가 지친 상태에서 하는 마지막 두 스테이션이라 시간이 가장 많이 걸립니다. 런지는 보폭을 일정하게 유지하고, 월볼은 10~15회 단위로 쉬는 지점을 미리 정해 두면 줄일 여지가 큽니다.`]);
 
-    // 200m (스테이션 직후)
-    const avg200 = (r) => { const xs = r.legs.map((l) => toSec(l.run200)).filter((v) => v != null); return xs.reduce((s, v) => s + v, 0) / xs.length; };
-    out.push(["info", `스테이션 직후 200m 평균은 ${fmt(Math.round(avg200(first)))} → <b>${fmt(Math.round(avg200(last)))}</b>입니다 (km당 ${fmt(Math.round(avg200(last) * 5))} 페이스). 앞 달리기보다 확실히 느리므로 스테이션을 끝내고 바로 다시 뛰는 연결 동작에서 5초씩만 줄여도 40초가 나옵니다.`]);
+    // 뒤 달리기 (스테이션 직후) km당 페이스
+    const pace2 = (r) => {
+      let t = 0, d = 0;
+      r.legs.forEach((l) => { const v = toSec(l.run200); if (v) { t += v; d += run2Dist(l, r); } });
+      return d ? (t * 1000) / d : 0;
+    };
+    out.push(["info", `스테이션 직후 뒤 달리기 페이스는 km당 ${fmt(Math.round(pace2(first)))} → <b>${fmt(Math.round(pace2(last)))}</b>입니다. 앞 달리기보다 느리므로 스테이션을 끝내고 바로 다시 뛰는 연결 동작을 다듬으면 구간마다 몇 초씩 줄일 수 있습니다.`]);
 
     // 다음 측정 배치 변경
     const swaps = D.target.map((t, i) => (t.a !== last.legs[i].a ? i : null)).filter((i) => i != null);
@@ -416,7 +430,7 @@
     }).join("");
     const raceNow = roundStats(ref).race;
     const raceT = Math.round(D.target.reduce((s, t, i) => s + legRace(t, i), 0));
-    $("targetTable").innerHTML = `<thead><tr><th>스테이션</th><th>선수</th><th>앞 달리기</th><th>스테이션</th><th>200m</th><th>${esc(ref.label)}</th><th>목표</th><th>단축</th></tr></thead>
+    $("targetTable").innerHTML = `<thead><tr><th>스테이션</th><th>선수</th><th>앞 달리기</th><th>스테이션</th><th>뒤 달리기</th><th>${esc(ref.label)}</th><th>목표</th><th>단축</th></tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr><td colspan="5">합계 (연습 거리)</td><td class="num">${fmt(sumNow)}</td><td class="num" style="font-size:20px;color:var(--good)">${fmt(sumT)}</td><td><span class="save">${fmtDelta(sumT - sumNow)}</span></td></tr>
       <tr><td colspan="5">대회 거리 환산 (달리기 8km)</td><td class="num">${fmt(raceNow)}</td><td class="num" style="font-size:20px;color:var(--good)">${fmt(raceT)}</td><td></td></tr></tfoot>`;
@@ -427,11 +441,11 @@
     { from: "2026-11-03", to: "2026-11-07", title: "마지막 강도 주",
       items: ["릴레이 전체 시뮬레이션 1회 (실전 순서·바통 터치 포함)", "800m × 6 인터벌, 목표 페이스 3:00~3:05, 사이 200m 조깅", "취약 스테이션 반복: 런지·월볼은 800m 달린 직후 바로 수행", "스테이션 끝나고 즉시 출발하는 200m 전환 연습"] },
     { from: "2026-11-08", to: "2026-11-12", title: "테이퍼 (운동량 40~50% 감소)",
-      items: ["강도는 유지하되 횟수를 절반으로: 400m × 4, 스테이션 짧게 1세트", "새 운동·무거운 하체 근력은 금지 (근육통이 대회까지 남음)", "신발·장갑·복장 실전과 똑같이 한 번 맞춰 보기", "순서·교대 위치·대기 동선 팀 공유"] },
+      items: ["11.09 마지막 시뮬레이션 (600m + 스테이션 + 400m), 대회처럼 저녁 시간에", "시뮬레이션에서 교대(터치) 동작까지 실제처럼: 다음 주자는 미리 나와 대기, 터치 즉시 출발", "이후엔 강도만 유지하고 횟수는 절반: 400m × 4, 스테이션 짧게 1세트", "새 운동·무거운 하체 근력은 금지 (근육통이 대회까지 남음)", "신발·장갑·복장 실전과 똑같이 한 번 맞춰 보기"] },
     { from: "2026-11-13", to: "2026-11-14", title: "회복 · 탄수화물 로딩",
-      items: ["20분 가벼운 조깅 + 가속주 4회, 가동성 운동", "탄수화물 위주 식사, 섬유질·기름진 음식 줄이기", "수면 8시간 이상, 음주 금지"] },
+      items: ["20분 가벼운 조깅 + 가속주 4회, 가동성 운동", "탄수화물 위주 식사, 섬유질·기름진 음식 줄이기", "수면 8시간 이상, 음주 금지", "대회장(KINTEX) 교통·주차·막차 확인, 출발 시간은 대회 약 3일 전 공지"] },
     { from: "2026-11-15", to: "2026-11-15", title: "레이스 데이",
-      items: ["시작 3~4시간 전 식사, 45~60분 전 카페인(평소 먹던 사람만)", "내 구간 10분 전부터 동적 워밍업 5분, 대기 중 체온 유지", "첫 1km 과속 금지, 스테이션 끝나면 바로 출발"] },
+      items: ["릴레이는 일요일 저녁 경기: 아침·점심은 평소처럼, 출발 3~4시간 전 마지막 식사, 1시간 전 가벼운 간식", "출발 1시간 반 전 도착, 체크인은 본인 신분증 필수 (대리 체크인 불가)", "달리기 코스는 실내 바퀴 수로 1km를 채우므로 각자 바퀴 수를 세고, 동료가 함께 세어 주기", "내 구간 10분 전부터 동적 워밍업 5분, 대기 중 체온 유지", "첫 1km 과속 금지, 스테이션 끝나면 바로 출발"] },
   ];
   function renderPhases() {
     const now = new Date();
@@ -460,7 +474,8 @@
         <li>현미·잡곡·생야채·튀김을 줄이고 흰쌀밥·면·빵으로</li>
         <li>처음 먹어 보는 음식, 음주, 매운 음식 금지</li></ul></section>
       <section><h3>대회 당일</h3><ul>
-        <li>시작 3~4시간 전 탄수화물 ${g(1, 2)} 식사 (흰밥+계란, 빵+잼+바나나)</li>
+        <li>저녁 경기라 아침·점심은 평소대로 든든하게, 출발 3~4시간 전 탄수화물 ${g(1, 2)} 식사 (흰밥+계란, 빵+잼+바나나)</li>
+        <li>출발 1시간 전 바나나·에너지바 같은 가벼운 간식</li>
         <li>2시간 전 물 500mL, 이후 조금씩</li>
         <li>카페인은 평소 마시는 사람만 약 ${g(3, 0, "mg")} (1kg당 3mg)</li>
         <li>내 구간 사이 대기 중에는 물 몇 모금, 배고프면 바나나 반 개나 젤 1개</li></ul></section>
@@ -482,12 +497,12 @@
   function renderForm() {
     const opts = D.athletes.map((a) => `<option value="${esc(a.id)}">${esc(a.id)}</option>`).join("");
     const prev = D.target;
-    $("formGrid").innerHTML = `<thead><tr><th>스테이션</th><th>선수</th><th>앞 달리기</th><th>스테이션</th><th>200m</th></tr></thead><tbody>` +
+    $("formGrid").innerHTML = `<thead><tr><th>스테이션</th><th>선수</th><th>앞 달리기</th><th>스테이션</th><th>뒤 달리기</th></tr></thead><tbody>` +
       D.stations.map((s, i) => `<tr><td class="st">${s.name}</td>
         <td><select id="f-a-${i}" aria-label="${s.name} 선수">${opts}</select></td>
-        <td><input id="f-r8-${i}" placeholder="${s.runDist ? "3:40" : "3:05"}" aria-label="${s.name} 앞 달리기 ${s.runDist || 800}m" inputmode="numeric"></td>
+        <td><input id="f-r8-${i}" placeholder="2:20" aria-label="${s.name} 앞 달리기" inputmode="numeric"></td>
         <td><input id="f-st-${i}" placeholder="4:00" aria-label="${s.name} 스테이션" inputmode="numeric"></td>
-        <td><input id="f-r2-${i}" placeholder="0:50" aria-label="${s.name} 200m" inputmode="numeric"></td></tr>`).join("") + "</tbody>";
+        <td><input id="f-r2-${i}" placeholder="1:40" aria-label="${s.name} 뒤 달리기" inputmode="numeric"></td></tr>`).join("") + "</tbody>";
     D.stations.forEach((_, i) => { $(`f-a-${i}`).value = prev[i].a; });
     $("newLabel").placeholder = `예: ${rounds.length + 1}차`;
   }
@@ -509,12 +524,14 @@
       legs.push(leg);
     }
     const extra = loadExtra();
-    extra.push({ label, legs, notes: [] });
+    const round = { label, runDist: Number($("newDist1").value) || 600, run2Dist: Number($("newDist2").value) || 400, legs, notes: [] };
+    extra.push(round);
     if (!saveExtra(extra)) {
       $("formMsg").textContent = "이 브라우저에서는 저장할 수 없습니다. JSON을 복사해 data.js에 직접 추가하세요.";
       return;
     }
-    $("formMsg").textContent = `${label} 기록을 저장했습니다. 합계 ${fmt(legs.reduce((s, l) => s + legTotal(l), 0))}.`;
+    const st = roundStats(round);
+    $("formMsg").textContent = `${label} 기록을 저장했습니다. 합계 ${fmt(st.total)}${st.race !== st.total ? ` (대회 거리 환산 ${fmt(st.race)})` : ""}.`;
     $("addForm").reset();
     refresh();
     renderForm();

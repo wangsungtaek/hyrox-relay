@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header class="top">
@@ -35,7 +35,7 @@
     <section class="panel">
       <div class="panel-head">
         <h2>어디서 줄었나</h2>
-        <p class="sub">회차별 앞 달리기 · 스테이션 · 뒤 200m 달리기 합계 (실측)</p>
+        <p class="sub">회차별 앞 달리기 · 스테이션 · 뒤 달리기 합계 (실측)</p>
       </div>
       <div id="breakdown"></div>
     </section>
@@ -43,7 +43,7 @@
     <section class="panel">
       <div class="panel-head">
         <h2>스테이션별 구간 기록</h2>
-        <p class="sub">구간 = 앞 달리기(800m, 스키는 1000m) + 스테이션 + 200m. 칸 안 숫자는 스테이션 단독 시간. 초록 테두리는 역대 최고.</p>
+        <p class="sub">구간 = 앞 달리기 + 스테이션 + 뒤 달리기 (회차별 거리는 머리글 참고). 칸 안 숫자는 스테이션 단독 시간. 초록 테두리는 역대 최고.</p>
       </div>
       <div class="table-scroll"><table class="grid" id="stationTable"></table></div>
     </section>
@@ -87,7 +87,7 @@
     <section class="panel">
       <div class="panel-head">
         <h2>60분 언더 목표 스플릿</h2>
-        <p class="sub">다음 측정 배치 기준, 구간마다 몇 초씩 줄이는 계획</p>
+        <p class="sub">다음 측정 배치 기준, 구간마다 몇 초씩 줄이는 계획 (1~3차와 같은 800m+200m 기준)</p>
       </div>
       <div class="table-scroll"><table class="grid target" id="targetTable"></table></div>
     </section>
@@ -122,6 +122,12 @@
           <label for="newLabel">회차 이름</label>
           <input id="newLabel" type="text" placeholder="예: 4차" required>
         </div>
+        <div class="form-row">
+          <label for="newDist1">앞 달리기 (m)</label>
+          <input id="newDist1" type="number" min="0" max="2000" step="100" value="600" inputmode="numeric">
+          <label for="newDist2">뒤 달리기 (m)</label>
+          <input id="newDist2" type="number" min="0" max="2000" step="100" value="400" inputmode="numeric">
+        </div>
         <div class="table-scroll">
           <table class="grid form-grid" id="formGrid"></table>
         </div>
@@ -137,11 +143,11 @@
   </main>
 
   <footer class="wrap foot">
-    <p>측정 방식: 각 구간 800m 달리기 → 스테이션 → 200m 달리기. 스키 구간만 앞 달리기 1000m (1차는 1200m를 한 번에). 대회 거리 환산은 초과한 200m를 같은 페이스로 뺀 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
+    <p>측정 방식: 각 구간 앞 달리기 → 스테이션 → 뒤 달리기. 1~3차는 800m+200m (스키 구간만 앞 1000m, 1차 스키 구간은 1200m를 한 번에), 11월 9일부터 600m+400m. 대회 거리 환산은 구간당 달리기를 1km로 맞춘 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
   </footer>
 
-  <script src="data.js?v=4"></script>
-  <script src="events.js?v=4"></script>
-  <script src="app.js?v=4"></script>
+  <script src="data.js?v=5"></script>
+  <script src="events.js?v=5"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

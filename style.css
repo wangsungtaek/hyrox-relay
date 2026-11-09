@@ -202,7 +202,9 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 
 /* Form */
 .add-form { display: grid; gap: 12px; }
-.form-row { display: flex; align-items: center; gap: 10px; }
+.form-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.form-row input[type="number"] { width: 90px; }
+.grid th small { font-weight: 400; color: var(--muted); }
 .form-grid input { width: 78px; }
 .form-grid select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
 .form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
