@@ -197,9 +197,9 @@
         const l = r.legs[i];
         const raw = legTotal(l);
         return `<td><div class="cell ${k === bestK ? "best" : ""}">
-          <span class="t">${fmt(times[k])}</span>
+          <span class="t">${fmt(times[k])}<em class="conv">환산</em></span>
           <span class="m">${chip(l.a)} 스테이션 ${l.station || "-"}</span>
-          <span class="m">실측 ${fmt(raw)} · 달리기 ${legDist(l, i, r)}</span></div></td>`;
+          <span class="m ${times[k] !== raw ? "diff" : ""}">${times[k] === raw ? "실측 동일" : `실측 ${fmt(raw)}`} · 달리기 ${legDist(l, i, r)}</span></div></td>`;
       }).join("");
       const d = times[times.length - 1] - times[0];
       return `<tr><td class="st">${s.name}<small>${s.en}</small></td>${cells}
