@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
   <header class="top">
@@ -94,6 +94,19 @@
 
     <section class="panel">
       <div class="panel-head">
+        <h2>대회 코스 · KINTEX</h2>
+        <p class="sub">HYROX Seoul 2026 코스 거리와 바퀴 규칙, 이 코스에 맞춘 시뮬레이션 방법</p>
+      </div>
+      <div class="course-facts" id="courseFacts"></div>
+      <div class="course-grid">
+        <div class="table-scroll"><table class="grid" id="courseTable"></table></div>
+        <div class="table-scroll"><table class="grid" id="lapTable"></table></div>
+      </div>
+      <div class="sim" id="courseSim"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
         <h2>남은 기간 계획</h2>
         <p class="sub">오늘 날짜 기준으로 현재 단계가 표시됩니다</p>
       </div>
@@ -146,8 +159,8 @@
     <p>측정 방식: 각 구간 앞 달리기 → 스테이션 → 뒤 달리기. 1~3차는 800m+200m (스키 구간만 앞 1000m, 1차 스키 구간은 1200m를 한 번에), 11월 9일부터 600m+400m. 대회 거리 환산은 구간당 달리기를 1km로 맞춘 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
   </footer>
 
-  <script src="data.js?v=5"></script>
-  <script src="events.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="data.js?v=6"></script>
+  <script src="events.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

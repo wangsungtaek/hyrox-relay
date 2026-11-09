@@ -105,6 +105,16 @@ window.HYROX_DATA = {
     { label: "HYROX DataLab – 종목별 평균 기록", url: "https://hyroxdatalab.com/articles/average-hyrox-station-times" },
   ],
 
+  // 대회 코스: HYROX Seoul 2026 (KINTEX). 출처 roxlapper.com (HYROX 비공식, 2026-11-09 확인)
+  course: {
+    name: "HYROX Seoul 2026 · KINTEX",
+    url: "https://roxlapper.com/seoul/2026-11-13",
+    lapM: 560,
+    rule: "\"IN\" 표지를 두 번째로 볼 때 스테이션으로 진입",
+    runs: [591, 952, 952, 952, 952, 952, 952, 952],
+    roxzone: { ski: 193, push: 193, pull: 175, burpee: 169, row: 171, carry: 188, lunge: 193, wallball: 167 },
+  },
+
   // 1시간 언더용 목표 스플릿. 선수(a)는 다음 측정 배치.
   // 런지 성택→유진, 월볼 유진→성택으로 변경 (두 사람 모두 첫 시도라 목표는 임시)
   target: [

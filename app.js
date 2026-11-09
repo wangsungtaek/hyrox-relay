@@ -77,6 +77,7 @@
     renderEvents();
     renderAthletes();
     renderInsights();
+    renderCourse();
     renderTarget();
     renderPhases();
     renderCare();
@@ -219,8 +220,7 @@
     const T = D.tiers;
     const last = rounds[rounds.length - 1];
     const st = roundStats(last);
-    const rox = toSec(T.roxzone[0].time);
-    const est = st.race + rox;
+    const est = estimate().total;
 
     // 완주 기록 스케일 (40분~90분)
     const lo = 40 * 60, hi = 90 * 60;
@@ -229,7 +229,7 @@
     const bands = ["S", "A", "B", "C"].map((k, i) => `<span class="tier ${k}" style="width:${pos(edges[i + 1]) - pos(edges[i])}%;height:auto;border-radius:0">${k} ${i < 3 ? `~${fmt(edges[i + 1])}` : `${fmt(edges[3])}~`}</span>`).join("");
     $("tierFinish").innerHTML = `
       <p class="tier-finish-text">완주 기록 기준: 환산 기록 <b>${fmt(st.race)}</b> ${badge(tierOf(st.race, T.finish))}
-        · 록스존 ${T.roxzone[0].time}을 더한 대회 예상 <b>${fmt(est)}</b> ${badge(tierOf(est, T.finish))}</p>
+        · 서울 코스(록스존 포함 ${courseKm()}km) 기준 대회 예상 <b>${fmt(est)}</b> ${badge(tierOf(est, T.finish))}</p>
       <div class="tier-scale">
         <div class="bands">${bands}</div>
         <div class="mark" style="left:${pos(st.race)}%"><b>환산 ${fmt(st.race)}</b></div>
@@ -254,16 +254,27 @@
     $("tierNotes").innerHTML = `
       <p>스테이션 티어는 개인전 엘리트·평균(약 90분대) 기록을 남녀 평균한 값입니다. 혼성 릴레이만 따로 낸 종목별 통계는 공개된 것이 없어 추정치이며, 남자 선수 기록은 실제보다 유리하게, 여자 선수 기록은 불리하게 나올 수 있습니다.</p>
       <p>썰매 종목은 연습 장비·바닥·무게가 대회와 다르면 시간이 크게 달라집니다. 연습 기록이 대회보다 빠르게 나올 수 있습니다.</p>
-      <p>완주 티어는 혼성 릴레이 결과(서울 2025 1:14:01이 112팀 중 상위 43%, 엘리트 54분 이내)를 기준으로 잡았습니다. 연습 기록에는 록스존(교대·이동) 시간이 빠져 있어 실제 대회에서는 ${T.roxzone.map((r) => r.time).join("~")} 정도가 더해집니다.</p>
+      <p>완주 티어는 혼성 릴레이 결과(서울 2025 1:14:01이 112팀 중 상위 43%, 엘리트 54분 이내)를 기준으로 잡았습니다. 연습 기록에는 록스존(스테이션 출입 이동)이 빠져 있어, 대회 예상은 서울 코스 전체 이동 거리 ${courseKm()}km를 같은 페이스로 달린다고 보고 계산했습니다 (교대 터치 시간 제외).</p>
       <p>출처: ${D.tierSources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(" · ")}</p>`;
   }
 
   // ---------- 국내 대회 기록 ----------
   // 우리 팀 대회 예상 = 환산 기록 + 록스존(서울 2025 중위권 팀 기준)
+  // 서울 코스 전체 이동 거리 (달리기 + 록스존)
+  function courseM() {
+    const c = D.course;
+    return c.runs.reduce((s, v) => s + v, 0) + Object.values(c.roxzone).reduce((s, v) => s + v, 0);
+  }
+  const courseKm = () => (courseM() / 1000).toFixed(1);
+  // 최근 회차 달리기 km당 페이스 (대회 거리 환산 기준)
+  function teamPace() {
+    return raceRunSec(roundStats(rounds[rounds.length - 1])) / 8;
+  }
+  // 대회 예상 = 서울 코스 이동 거리를 우리 페이스로 + 스테이션 (교대 터치 시간 제외)
   function estimate() {
     const st = roundStats(rounds[rounds.length - 1]);
-    const rox = toSec(D.tiers.roxzone[0].time);
-    return { total: st.race + rox, run: raceRunSec(st) + rox, station: st.st };
+    const run = Math.round((teamPace() * courseM()) / 1000);
+    return { total: run + st.st, run, station: st.st };
   }
   // 그 기록이면 몇 위인지 (같은 기록은 앞 순위로)
   function rankOf(list, sec) {
@@ -320,7 +331,7 @@
     $("evNotes").innerHTML = `
       <p>60분 안에 들어온 팀은 대회별로 ${E.map((e) => `${e.name} ${e.teams.filter((t) => t[0] + t[1] < GOAL).length}팀`).join(", ")}입니다. <b>1시간 언더는 혼성 릴레이에서 상위 5% 안쪽, 시상권에 가까운 기록</b>입니다.</p>
       <p>${ev.name} 기준으로 나눠 보면, 우리 스테이션 합계 ${fmt(me.station)}는 ${ev.teams.length}팀 중 <b>${sr}위</b>, 달리기+록스존 예상 ${fmt(me.run)}는 <b>${rr}위</b> 수준입니다. 스테이션은 이미 최상위권이라 달리기와 교대에서 줄이는 것이 1시간 언더의 핵심입니다.</p>
-      <p>우리 대회 예상은 환산 기록 ${fmt(roundStats(rounds[rounds.length - 1]).race)}에 록스존 ${D.tiers.roxzone[0].time}를 더한 값이고, 연습 썰매 기록이 대회보다 빠를 수 있어 실제로는 조금 더 걸릴 수 있습니다.</p>
+      <p>우리 대회 예상은 서울 코스 이동 거리 ${courseKm()}km를 최근 페이스(km당 ${fmt(Math.round(teamPace()))})로 달리고 스테이션 ${fmt(me.station)}를 더한 값입니다. 교대 터치 시간은 빠져 있고, 연습 썰매 기록이 대회보다 빠를 수 있어 실제로는 조금 더 걸릴 수 있습니다.</p>
       <p>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name} 혼성 릴레이</a>`).join(" · ")} (2026.11.03 수집)</p>`;
   }
 
@@ -386,7 +397,9 @@
     const weak = tierStations.filter((x) => x.k === "C" || x.k === "B").map((x) => `${x.s.name}(${x.k})`);
     if (strong.length) out.push(["up", `혼성 릴레이 기준 S티어 종목: <b>${strong.join(", ")}</b>. 이미 엘리트 수준이라 지금 페이스를 유지하는 게 목표입니다.`]);
     if (weak.length) out.push(["fix", `B·C티어 종목: <b>${weak.join(", ")}</b>. 티어를 한 단계만 올려도 시간이 가장 크게 줄어드는 곳입니다.`]);
-    out.push(["fix", `연습 기록에는 록스존(교대·이동)이 빠져 있습니다. 실제 혼성 릴레이에서는 ${D.tiers.roxzone.map((r) => r.time).join("~")}가 더해지므로, 대회에서 60분 안에 들어오려면 환산 기록이 <b>${fmt(GOAL - toSec(D.tiers.roxzone[0].time))}</b> 안쪽이어야 합니다. 교대 위치를 미리 정하고 터치 연습을 하면 록스존을 1분 이상 줄일 수 있습니다.`]);
+    const est = estimate();
+    const needPace = (GOAL - est.station) / (courseM() / 1000);
+    out.push(["fix", `서울 코스는 달리기 ${(D.course.runs.reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km에 록스존 ${(Object.values(D.course.roxzone).reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km가 더해져 전체 이동이 ${courseKm()}km입니다. 지금 페이스면 대회 예상 <b>${fmt(est.total)}</b>이고, 스테이션이 그대로라면 60분 안에 들어오기 위해 전체 이동을 <b>km당 ${fmt(Math.round(needPace))}</b>로 가야 합니다. 록스존은 걷지 말고 조깅으로 이동하세요.`]);
 
     out.push(["fix", `런지와 월볼은 하체가 지친 상태에서 하는 마지막 두 스테이션이라 시간이 가장 많이 걸립니다. 런지는 보폭을 일정하게 유지하고, 월볼은 10~15회 단위로 쉬는 지점을 미리 정해 두면 줄일 여지가 큽니다.`]);
 
@@ -410,6 +423,53 @@
 
     const label = { up: "좋아진 점", fix: "개선", info: "참고" };
     $("insights").innerHTML = out.map(([k, t]) => `<li><span class="tag ${k}">${label[k]}</span><p>${t}</p></li>`).join("");
+  }
+
+  // ---------- 대회 코스 ----------
+  function renderCourse() {
+    const c = D.course;
+    const runM = c.runs.reduce((s, v) => s + v, 0);
+    const roxM = Object.values(c.roxzone).reduce((s, v) => s + v, 0);
+    const pace = teamPace();
+    $("courseFacts").innerHTML = `
+      <div>한 바퀴<b>${c.lapM}m</b></div>
+      <div>달리기 합계<b>${(runM / 1000).toFixed(2)}km</b></div>
+      <div>록스존 합계<b>${(roxM / 1000).toFixed(2)}km</b></div>
+      <div>진입 규칙<b style="font-size:15px;font-family:var(--font-body)">${esc(c.rule)}</b></div>`;
+
+    // 구간별 거리와 우리 페이스 예상
+    let sum = 0;
+    const rows = D.stations.map((s, i) => {
+      const run = c.runs[i], rox = c.roxzone[s.id];
+      const t = Math.round((pace * (run + rox)) / 1000);
+      sum += t;
+      return `<tr><td class="num">${i + 1}</td><td class="st">${s.name}</td><td>${chip(D.target[i].a)}</td>
+        <td class="num">${run}m <small style="color:var(--muted)">${(run / c.lapM).toFixed(2)}바퀴</small></td>
+        <td class="num">${rox}m</td><td class="num">${fmt(t)}</td></tr>`;
+    }).join("");
+    $("courseTable").innerHTML = `<thead><tr><th>#</th><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>이동 예상</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td colspan="3">합계 (km당 ${fmt(Math.round(pace))})</td><td class="num">${runM}m</td><td class="num">${roxM}m</td><td class="num">${fmt(sum)}</td></tr></tfoot>`;
+
+    // 페이스 → 바퀴 시간
+    const paces = [210, 225, 240, 255].concat(Math.round(pace)).sort((a, b) => a - b).filter((v, i, a) => a.indexOf(v) === i);
+    $("lapTable").innerHTML = `<thead><tr><th>km당</th><th>한 바퀴</th><th>952m</th></tr></thead><tbody>` +
+      paces.map((p) => `<tr class="${p === Math.round(pace) ? "me" : ""}"><td class="num">${fmt(p)}${p === Math.round(pace) ? " (우리)" : ""}</td>
+        <td class="num">${fmt(Math.round((p * c.lapM) / 1000))}</td><td class="num">${fmt(Math.round((p * 952) / 1000))}</td></tr>`).join("") + "</tbody>";
+
+    $("courseSim").innerHTML = `
+      <section><h3>코스에 맞춘 시뮬레이션 (구간당)</h3><ol>
+        <li>달리기 <b>950m</b> (1번 스키 구간만 <b>600m</b>)</li>
+        <li>스테이션까지 <b>90m</b> 조깅 이동 (록스존)</li>
+        <li>스테이션</li>
+        <li>스테이션에서 <b>90m</b> 조깅 이동 후 다음 주자에게 터치</li></ol>
+        <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">600+400 형식을 유지한다면 550m + 스테이션 + 400m에 앞뒤 이동 90m씩을 더하면 거의 같습니다.</p></section>
+      <section><h3>같이 연습할 것</h3><ul>
+        <li>"IN" 표시를 하나 두고 <b>두 번째로 지날 때 진입</b>하는 연습. 실내 대회에서 가장 흔한 실수가 바퀴 수 착오입니다.</li>
+        <li>대기 중인 팀원이 달리는 사람의 바퀴 수를 같이 세기</li>
+        <li>록스존 ${(roxM / 1000).toFixed(2)}km는 걷지 말고 조깅으로</li>
+        <li>1번 구간은 달리기가 591m로 다른 구간보다 약 360m 짧습니다. 달리기 부담을 줄이고 싶은 사람을 1번에 두면 유리합니다.</li></ul></section>
+      <p class="src">출처: <a href="${c.url}" target="_blank" rel="noopener">roxlapper.com HYROX Seoul 코스</a> (HYROX 비공식, 2026.11.09 확인). 대회 당일 공식 안내와 한 번 더 확인하세요.</p>`;
   }
 
   // ---------- 목표 스플릿 ----------
