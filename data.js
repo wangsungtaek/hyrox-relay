@@ -105,14 +105,27 @@ window.HYROX_DATA = {
     { label: "HYROX DataLab – 종목별 평균 기록", url: "https://hyroxdatalab.com/articles/average-hyrox-station-times" },
   ],
 
-  // 대회 코스: HYROX Seoul 2026 (KINTEX). 출처 roxlapper.com (HYROX 비공식, 2026-11-09 확인)
+  // 대회 코스: HYROX Seoul 2026 (KINTEX) 릴레이 흐름
+  // 위치·흐름: HYROX 공식 경기장 지도. 미터 거리: roxlapper.com 실측(한 바퀴 560m, 스테이션별 록스존 합계)을
+  // 공식 지도 비율로 나눈 추정치 (2026-11-09 확인).
+  // 구간: 처음 달리기(run) → 록스존 진입(in) → 스테이션 → 록스존 퇴장(out) → 교대 구역까지 달리기(toTZ)
   course: {
     name: "HYROX Seoul 2026 · KINTEX",
+    mapUrl: "https://hyrox.com/wp-content/uploads/2026/11/13-15-November-1.pdf",
+    eventUrl: "https://hyrox.com/event/hyrox-seoul/",
     url: "https://roxlapper.com/seoul/2026-11-13",
     lapM: 560,
-    rule: "\"IN\" 표지를 두 번째로 볼 때 스테이션으로 진입",
-    runs: [591, 952, 952, 952, 952, 952, 952, 952],
-    roxzone: { ski: 193, push: 193, pull: 175, burpee: 169, row: 171, carry: 188, lunge: 193, wallball: 167 },
+    rule: "\"IN\"을 두 번째로 볼 때 진입",
+    legs: [
+      { run: 590, in: 10, out: 180, toTZ: 320, from: "출발 터널" },
+      { run: 630, in: 15, out: 180, toTZ: 320 },
+      { run: 630, in: 50, out: 125, toTZ: 320 },
+      { run: 630, in: 90, out: 80, toTZ: 320 },
+      { run: 630, in: 105, out: 65, toTZ: 320 },
+      { run: 630, in: 130, out: 60, toTZ: 320 },
+      { run: 630, in: 150, out: 45, toTZ: 320 },
+      { run: 630, in: 150, out: 0, toTZ: 15, to: "결승선 (팀원 4명 함께)" },
+    ],
   },
 
   // 1시간 언더용 목표 스플릿. 선수(a)는 다음 측정 배치.

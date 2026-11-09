@@ -262,9 +262,10 @@
   // 우리 팀 대회 예상 = 환산 기록 + 록스존(서울 2025 중위권 팀 기준)
   // 서울 코스 전체 이동 거리 (달리기 + 록스존)
   function courseM() {
-    const c = D.course;
-    return c.runs.reduce((s, v) => s + v, 0) + Object.values(c.roxzone).reduce((s, v) => s + v, 0);
+    return D.course.legs.reduce((s, l) => s + l.run + l.in + l.out + l.toTZ, 0);
   }
+  const courseRunM = () => D.course.legs.reduce((s, l) => s + l.run + l.toTZ, 0);
+  const courseRoxM = () => D.course.legs.reduce((s, l) => s + l.in + l.out, 0);
   const courseKm = () => (courseM() / 1000).toFixed(1);
   // 최근 회차 달리기 km당 페이스 (대회 거리 환산 기준)
   function teamPace() {
@@ -284,10 +285,10 @@
   }
   // 서울 코스 구간별 이동 거리 (달리기 + 록스존)와 담당 선수 (다음 측정 배치)
   function courseLegs() {
-    const c = D.course;
     return D.stations.map((s, i) => {
-      const a = D.target[i].a, run = c.runs[i], rox = c.roxzone[s.id];
-      return { s, i, a, run, rox, m: run + rox, t: Math.round((athletePace(a) * (run + rox)) / 1000) };
+      const l = D.course.legs[i], a = D.target[i].a;
+      const run = l.run + l.toTZ, rox = l.in + l.out, m = run + rox;
+      return { s, i, a, l, run, rox, m, t: Math.round((athletePace(a) * m) / 1000) };
     });
   }
   // 대회 예상 = 구간마다 담당 선수 페이스로 코스 이동 + 스테이션 (교대 터치 시간 제외)
@@ -422,7 +423,7 @@
     if (strong.length) out.push(["up", `혼성 릴레이 기준 S티어 종목: <b>${strong.join(", ")}</b>. 이미 엘리트 수준이라 지금 페이스를 유지하는 게 목표입니다.`]);
     if (weak.length) out.push(["fix", `B·C티어 종목: <b>${weak.join(", ")}</b>. 티어를 한 단계만 올려도 시간이 가장 크게 줄어드는 곳입니다.`]);
     const est = estimate();
-    out.push(["fix", `서울 코스는 달리기 ${(D.course.runs.reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km에 록스존 ${(Object.values(D.course.roxzone).reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km가 더해져 전체 이동이 ${courseKm()}km입니다. 지금 페이스면 대회 예상 <b>${fmt(est.total)}</b>이고, 스테이션이 그대로라면 60분 안에 들어오기 위해 전체 이동을 <b>km당 ${fmt(Math.round(needPace()))}</b>로 가야 합니다. 록스존은 걷지 말고 조깅으로 이동하세요.`]);
+    out.push(["fix", `서울 코스는 달리기 ${(courseRunM() / 1000).toFixed(2)}km에 록스존 ${(courseRoxM() / 1000).toFixed(2)}km가 더해져 전체 이동이 ${courseKm()}km입니다. 지금 페이스면 대회 예상 <b>${fmt(est.total)}</b>이고, 스테이션이 그대로라면 60분 안에 들어오기 위해 전체 이동을 <b>km당 ${fmt(Math.round(needPace()))}</b>로 가야 합니다. 록스존은 걷지 말고 조깅으로 이동하세요.`]);
 
     out.push(["fix", `런지와 월볼은 하체가 지친 상태에서 하는 마지막 두 스테이션이라 시간이 가장 많이 걸립니다. 런지는 보폭을 일정하게 유지하고, 월볼은 10~15회 단위로 쉬는 지점을 미리 정해 두면 줄일 여지가 큽니다.`]);
 
@@ -451,8 +452,7 @@
   // ---------- 대회 코스 ----------
   function renderCourse() {
     const c = D.course;
-    const runM = c.runs.reduce((s, v) => s + v, 0);
-    const roxM = Object.values(c.roxzone).reduce((s, v) => s + v, 0);
+    const runM = courseRunM(), roxM = courseRoxM();
     const pace = teamPace();
     $("courseFacts").innerHTML = `
       <div>한 바퀴<b>${c.lapM}m</b></div>
@@ -460,16 +460,28 @@
       <div>록스존 합계<b>${(roxM / 1000).toFixed(2)}km</b></div>
       <div>진입 규칙<b style="font-size:15px;font-family:var(--font-body)">${esc(c.rule)}</b></div>`;
 
+    $("courseFlow").innerHTML = `
+      <ol class="flow">
+        <li><b>처음 달리기</b><span>교대 구역 출발 → 약 70m 뒤 IN을 처음 지나침 → 한 바퀴 → IN 두 번째에 진입</span></li>
+        <li><b>록스존 진입</b><span>IN에서 스테이션까지 (뒤 번호일수록 멂)</span></li>
+        <li><b>스테이션</b><span>1번 스키부터 8번 월볼까지 왼쪽에서 오른쪽 순서</span></li>
+        <li><b>록스존 퇴장</b><span>스테이션에서 오른쪽 아래 OUT까지 (앞 번호일수록 멂)</span></li>
+        <li><b>교대까지 달리기</b><span>OUT → 오른쪽 변 → 위쪽 직선 → 왼쪽 변 교대 구역에서 하이파이브</span></li>
+      </ol>`;
+
     // 구간별 거리, 담당 선수 페이스 예상, 60분 목표
     const legs = courseLegs();
     const need = needPace();
     const goalT = (m) => Math.round((need * m) / 1000);
     const rows = legs.map((x) => `<tr><td class="num">${x.i + 1}</td><td class="st">${x.s.name}</td><td>${chip(x.a)}</td>
-        <td class="num">${x.run}m <small style="color:var(--muted)">${(x.run / c.lapM).toFixed(2)}바퀴</small></td>
-        <td class="num">${x.rox}m</td><td class="num">${x.m}m</td><td class="num">${fmt(x.t)}</td><td class="num" style="color:var(--good)">${fmt(goalT(x.m))}</td></tr>`).join("");
-    $("courseTable").innerHTML = `<thead><tr><th>#</th><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>합계</th><th>예상</th><th>60분 목표</th></tr></thead>
+        <td class="num">${x.l.run}m${x.l.from ? `<small style="display:block;color:var(--muted)">${esc(x.l.from)}에서</small>` : ""}</td>
+        <td class="num">${x.l.in}m</td><td class="num">${x.l.out ? `${x.l.out}m` : "–"}</td>
+        <td class="num">${x.l.toTZ}m${x.l.to ? `<small style="display:block;color:var(--muted)">${esc(x.l.to)}</small>` : ""}</td>
+        <td class="num">${x.m}m</td><td class="num">${fmt(x.t)}</td><td class="num" style="color:var(--good)">${fmt(goalT(x.m))}</td></tr>`).join("");
+    const sum = (k) => c.legs.reduce((s, l) => s + l[k], 0);
+    $("courseTable").innerHTML = `<thead><tr><th>#</th><th>스테이션</th><th>선수</th><th>처음 달리기</th><th>록스존 진입</th><th>록스존 퇴장</th><th>교대까지</th><th>합계</th><th>예상</th><th>60분 목표</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3">합계</td><td class="num">${runM}m</td><td class="num">${roxM}m</td><td class="num">${runM + roxM}m</td>
+      <tfoot><tr><td colspan="3">합계</td><td class="num">${sum("run")}m</td><td class="num">${sum("in")}m</td><td class="num">${sum("out")}m</td><td class="num">${sum("toTZ")}m</td><td class="num">${courseM()}m</td>
         <td class="num">${fmt(legs.reduce((s, x) => s + x.t, 0))}</td><td class="num" style="color:var(--good)">${fmt(legs.reduce((s, x) => s + goalT(x.m), 0))}</td></tr></tfoot>`;
 
     // 선수별 이동 거리 합계
@@ -480,32 +492,35 @@
       return `<article class="ath" style="--c:${p.color}">
         <h3>${esc(p.id)}<span class="num">${((run + rox) / 1000).toFixed(2)}km</span></h3>
         <ul class="legs">
-          ${mine.map((x) => `<li><span>${x.i + 1}번 ${x.s.name}</span><span class="num">${x.run}+${x.rox}m</span></li>`).join("")}
+          ${mine.map((x) => `<li><span>${x.i + 1}번 ${x.s.name}</span><span class="num">${x.l.run}+${x.l.in}+${x.l.out}+${x.l.toTZ}m</span></li>`).join("")}
           <li><span>달리기 / 록스존</span><span class="num">${run}m / ${rox}m</span></li>
           <li><span>본인 페이스 (km당 ${fmt(Math.round(athletePace(p.id)))})</span><span class="num">${fmt(t)}</span></li>
           <li><span>60분 목표 (km당 ${fmt(Math.round(need))})</span><span class="num" style="color:var(--good)">${fmt(goalT(run + rox))}</span></li>
         </ul></article>`;
     }).join("");
 
-    // 페이스 → 바퀴 시간
+    // 페이스 → 바퀴·구간 시간
     const paces = [210, 225, 240, 255].concat(Math.round(pace)).sort((a, b) => a - b).filter((v, i, a) => a.indexOf(v) === i);
-    $("lapTable").innerHTML = `<thead><tr><th>km당</th><th>한 바퀴</th><th>952m</th></tr></thead><tbody>` +
+    const at = (p, m) => fmt(Math.round((p * m) / 1000));
+    $("lapTable").innerHTML = `<thead><tr><th>km당</th><th>한 바퀴</th><th>처음 630m</th><th>교대까지 320m</th></tr></thead><tbody>` +
       paces.map((p) => `<tr class="${p === Math.round(pace) ? "me" : ""}"><td class="num">${fmt(p)}${p === Math.round(pace) ? " (우리)" : ""}</td>
-        <td class="num">${fmt(Math.round((p * c.lapM) / 1000))}</td><td class="num">${fmt(Math.round((p * 952) / 1000))}</td></tr>`).join("") + "</tbody>";
+        <td class="num">${at(p, c.lapM)}</td><td class="num">${at(p, 630)}</td><td class="num">${at(p, 320)}</td></tr>`).join("") + "</tbody>";
 
     $("courseSim").innerHTML = `
       <section><h3>코스에 맞춘 시뮬레이션 (구간당)</h3><ol>
-        <li>달리기 <b>950m</b> (1번 스키 구간만 <b>600m</b>)</li>
-        <li>스테이션까지 <b>90m</b> 조깅 이동 (록스존)</li>
+        <li>처음 달리기 <b>630m</b> (1번 스키 구간만 <b>590m</b>)</li>
+        <li>록스존 진입: 위 표의 거리만큼 조깅</li>
         <li>스테이션</li>
-        <li>스테이션에서 <b>90m</b> 조깅 이동 후 다음 주자에게 터치</li></ol>
-        <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">600+400 형식을 유지한다면 550m + 스테이션 + 400m에 앞뒤 이동 90m씩을 더하면 거의 같습니다.</p></section>
+        <li>록스존 퇴장: 위 표의 거리만큼 조깅</li>
+        <li>교대까지 <b>320m</b> 달리고 하이파이브 (8번은 월볼 후 팀원과 함께 결승선)</li></ol>
+        <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">지금의 600 + 스테이션 + 400 구성을 630 + 스테이션 + 320으로 바꾸고, 록스존만 더하면 대회와 거의 같습니다.</p></section>
       <section><h3>같이 연습할 것</h3><ul>
-        <li>"IN" 표시를 하나 두고 <b>두 번째로 지날 때 진입</b>하는 연습. 실내 대회에서 가장 흔한 실수가 바퀴 수 착오입니다.</li>
+        <li>출발 약 70m 지점에 "IN" 콘을 두고, 처음엔 지나치고 <b>두 번째로 만날 때 진입</b>. 바퀴 수는 본인 책임이고 경기장 랩 화면은 참고용입니다.</li>
         <li>대기 중인 팀원이 달리는 사람의 바퀴 수를 같이 세기</li>
         <li>록스존 ${(roxM / 1000).toFixed(2)}km는 걷지 말고 조깅으로</li>
-        <li>1번 구간은 달리기가 591m로 다른 구간보다 약 360m 짧습니다. 달리기 부담을 줄이고 싶은 사람을 1번에 두면 유리합니다.</li></ul></section>
-      <p class="src">출처: <a href="${c.url}" target="_blank" rel="noopener">roxlapper.com HYROX Seoul 코스</a> (HYROX 비공식, 2026.11.09 확인). 대회 당일 공식 안내와 한 번 더 확인하세요.</p>`;
+        <li>다음 주자는 교대 직전에만 교대 구역에 들어갈 수 있으니, 바로 옆 대기 구역에서 준비</li>
+        <li>스테이션에서 나올 때 IN 쪽으로 나가면 2분 페널티</li></ul></section>
+      <p class="src">출처: <a href="${c.mapUrl}" target="_blank" rel="noopener">HYROX 공식 서울 경기장 지도</a> · <a href="${c.eventUrl}" target="_blank" rel="noopener">HYROX Seoul 공식 페이지</a> · <a href="${c.url}" target="_blank" rel="noopener">roxlapper.com 코스 실측 (비공식)</a>. 위치와 흐름은 공식 지도, 미터 거리는 실측 자료를 지도 비율로 나눈 추정치입니다 (2026.11.09 확인).</p>`;
   }
 
   // ---------- 목표 스플릿 ----------
