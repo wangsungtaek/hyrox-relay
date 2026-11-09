@@ -178,7 +178,10 @@ table.grid { border-collapse: collapse; width: 100%; min-width: 560px; font-size
 .course-facts b { display: block; font-family: var(--font-display); font-size: 22px; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1.2; }
 .course-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .course-grid table.grid { min-width: 0; }
-#courseTable { min-width: 480px; }
+#courseTable { min-width: 600px; }
+.course-grid { grid-template-columns: minmax(0, 1fr); }
+#lapTable { max-width: 420px; }
+.course-h { font-size: 15px; margin: 18px 0 10px; }
 .grid tr.me td { background: var(--accent-soft); font-weight: 600; }
 .sim { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .sim section { background: var(--bg); border-radius: 10px; padding: 14px 16px; min-width: 0; }

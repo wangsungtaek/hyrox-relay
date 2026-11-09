@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header class="top">
@@ -102,6 +102,8 @@
         <div class="table-scroll"><table class="grid" id="courseTable"></table></div>
         <div class="table-scroll"><table class="grid" id="lapTable"></table></div>
       </div>
+      <h3 class="course-h">선수별 이동 거리</h3>
+      <div class="athletes" id="courseAthletes"></div>
       <div class="sim" id="courseSim"></div>
     </section>
 
@@ -159,8 +161,8 @@
     <p>측정 방식: 각 구간 앞 달리기 → 스테이션 → 뒤 달리기. 1~3차는 800m+200m (스키 구간만 앞 1000m, 1차 스키 구간은 1200m를 한 번에), 11월 9일부터 600m+400m. 대회 거리 환산은 구간당 달리기를 1km로 맞춘 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
   </footer>
 
-  <script src="data.js?v=6"></script>
-  <script src="events.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="data.js?v=7"></script>
+  <script src="events.js?v=7"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>

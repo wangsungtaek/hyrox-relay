@@ -270,11 +270,35 @@
   function teamPace() {
     return raceRunSec(roundStats(rounds[rounds.length - 1])) / 8;
   }
-  // 대회 예상 = 서울 코스 이동 거리를 우리 페이스로 + 스테이션 (교대 터치 시간 제외)
+  // 선수별 최근 회차 달리기 km당 페이스 (없으면 팀 페이스)
+  function athletePace(id) {
+    const r = rounds[rounds.length - 1];
+    let t = 0, d = 0;
+    r.legs.forEach((l, i) => {
+      if (l.a !== id) return;
+      const p = legParts(l);
+      t += p.r8 + p.r2;
+      d += runDist(l, i, r) + (l.run200 ? run2Dist(l, r) : 0);
+    });
+    return d ? (t * 1000) / d : teamPace();
+  }
+  // 서울 코스 구간별 이동 거리 (달리기 + 록스존)와 담당 선수 (다음 측정 배치)
+  function courseLegs() {
+    const c = D.course;
+    return D.stations.map((s, i) => {
+      const a = D.target[i].a, run = c.runs[i], rox = c.roxzone[s.id];
+      return { s, i, a, run, rox, m: run + rox, t: Math.round((athletePace(a) * (run + rox)) / 1000) };
+    });
+  }
+  // 대회 예상 = 구간마다 담당 선수 페이스로 코스 이동 + 스테이션 (교대 터치 시간 제외)
   function estimate() {
     const st = roundStats(rounds[rounds.length - 1]);
-    const run = Math.round((teamPace() * courseM()) / 1000);
+    const run = courseLegs().reduce((s, x) => s + x.t, 0);
     return { total: run + st.st, run, station: st.st };
+  }
+  // 60분 안에 들어오기 위한 전체 이동 km당 페이스 (스테이션은 최근 회차 그대로)
+  function needPace() {
+    return (GOAL - estimate().station) / (courseM() / 1000);
   }
   // 그 기록이면 몇 위인지 (같은 기록은 앞 순위로)
   function rankOf(list, sec) {
@@ -331,7 +355,7 @@
     $("evNotes").innerHTML = `
       <p>60분 안에 들어온 팀은 대회별로 ${E.map((e) => `${e.name} ${e.teams.filter((t) => t[0] + t[1] < GOAL).length}팀`).join(", ")}입니다. <b>1시간 언더는 혼성 릴레이에서 상위 5% 안쪽, 시상권에 가까운 기록</b>입니다.</p>
       <p>${ev.name} 기준으로 나눠 보면, 우리 스테이션 합계 ${fmt(me.station)}는 ${ev.teams.length}팀 중 <b>${sr}위</b>, 달리기+록스존 예상 ${fmt(me.run)}는 <b>${rr}위</b> 수준입니다. 스테이션은 이미 최상위권이라 달리기와 교대에서 줄이는 것이 1시간 언더의 핵심입니다.</p>
-      <p>우리 대회 예상은 서울 코스 이동 거리 ${courseKm()}km를 최근 페이스(km당 ${fmt(Math.round(teamPace()))})로 달리고 스테이션 ${fmt(me.station)}를 더한 값입니다. 교대 터치 시간은 빠져 있고, 연습 썰매 기록이 대회보다 빠를 수 있어 실제로는 조금 더 걸릴 수 있습니다.</p>
+      <p>우리 대회 예상은 서울 코스 구간마다 담당 선수의 최근 달리기 페이스로 이동 거리를 계산하고 스테이션 ${fmt(me.station)}를 더한 값입니다. 교대 터치 시간은 빠져 있고, 연습 썰매 기록이 대회보다 빠를 수 있어 실제로는 조금 더 걸릴 수 있습니다.</p>
       <p>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name} 혼성 릴레이</a>`).join(" · ")} (2026.11.03 수집)</p>`;
   }
 
@@ -398,8 +422,7 @@
     if (strong.length) out.push(["up", `혼성 릴레이 기준 S티어 종목: <b>${strong.join(", ")}</b>. 이미 엘리트 수준이라 지금 페이스를 유지하는 게 목표입니다.`]);
     if (weak.length) out.push(["fix", `B·C티어 종목: <b>${weak.join(", ")}</b>. 티어를 한 단계만 올려도 시간이 가장 크게 줄어드는 곳입니다.`]);
     const est = estimate();
-    const needPace = (GOAL - est.station) / (courseM() / 1000);
-    out.push(["fix", `서울 코스는 달리기 ${(D.course.runs.reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km에 록스존 ${(Object.values(D.course.roxzone).reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km가 더해져 전체 이동이 ${courseKm()}km입니다. 지금 페이스면 대회 예상 <b>${fmt(est.total)}</b>이고, 스테이션이 그대로라면 60분 안에 들어오기 위해 전체 이동을 <b>km당 ${fmt(Math.round(needPace))}</b>로 가야 합니다. 록스존은 걷지 말고 조깅으로 이동하세요.`]);
+    out.push(["fix", `서울 코스는 달리기 ${(D.course.runs.reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km에 록스존 ${(Object.values(D.course.roxzone).reduce((s, v) => s + v, 0) / 1000).toFixed(2)}km가 더해져 전체 이동이 ${courseKm()}km입니다. 지금 페이스면 대회 예상 <b>${fmt(est.total)}</b>이고, 스테이션이 그대로라면 60분 안에 들어오기 위해 전체 이동을 <b>km당 ${fmt(Math.round(needPace()))}</b>로 가야 합니다. 록스존은 걷지 말고 조깅으로 이동하세요.`]);
 
     out.push(["fix", `런지와 월볼은 하체가 지친 상태에서 하는 마지막 두 스테이션이라 시간이 가장 많이 걸립니다. 런지는 보폭을 일정하게 유지하고, 월볼은 10~15회 단위로 쉬는 지점을 미리 정해 두면 줄일 여지가 큽니다.`]);
 
@@ -437,19 +460,32 @@
       <div>록스존 합계<b>${(roxM / 1000).toFixed(2)}km</b></div>
       <div>진입 규칙<b style="font-size:15px;font-family:var(--font-body)">${esc(c.rule)}</b></div>`;
 
-    // 구간별 거리와 우리 페이스 예상
-    let sum = 0;
-    const rows = D.stations.map((s, i) => {
-      const run = c.runs[i], rox = c.roxzone[s.id];
-      const t = Math.round((pace * (run + rox)) / 1000);
-      sum += t;
-      return `<tr><td class="num">${i + 1}</td><td class="st">${s.name}</td><td>${chip(D.target[i].a)}</td>
-        <td class="num">${run}m <small style="color:var(--muted)">${(run / c.lapM).toFixed(2)}바퀴</small></td>
-        <td class="num">${rox}m</td><td class="num">${fmt(t)}</td></tr>`;
-    }).join("");
-    $("courseTable").innerHTML = `<thead><tr><th>#</th><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>이동 예상</th></tr></thead>
+    // 구간별 거리, 담당 선수 페이스 예상, 60분 목표
+    const legs = courseLegs();
+    const need = needPace();
+    const goalT = (m) => Math.round((need * m) / 1000);
+    const rows = legs.map((x) => `<tr><td class="num">${x.i + 1}</td><td class="st">${x.s.name}</td><td>${chip(x.a)}</td>
+        <td class="num">${x.run}m <small style="color:var(--muted)">${(x.run / c.lapM).toFixed(2)}바퀴</small></td>
+        <td class="num">${x.rox}m</td><td class="num">${x.m}m</td><td class="num">${fmt(x.t)}</td><td class="num" style="color:var(--good)">${fmt(goalT(x.m))}</td></tr>`).join("");
+    $("courseTable").innerHTML = `<thead><tr><th>#</th><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>합계</th><th>예상</th><th>60분 목표</th></tr></thead>
       <tbody>${rows}</tbody>
-      <tfoot><tr><td colspan="3">합계 (km당 ${fmt(Math.round(pace))})</td><td class="num">${runM}m</td><td class="num">${roxM}m</td><td class="num">${fmt(sum)}</td></tr></tfoot>`;
+      <tfoot><tr><td colspan="3">합계</td><td class="num">${runM}m</td><td class="num">${roxM}m</td><td class="num">${runM + roxM}m</td>
+        <td class="num">${fmt(legs.reduce((s, x) => s + x.t, 0))}</td><td class="num" style="color:var(--good)">${fmt(legs.reduce((s, x) => s + goalT(x.m), 0))}</td></tr></tfoot>`;
+
+    // 선수별 이동 거리 합계
+    $("courseAthletes").innerHTML = D.athletes.map((p) => {
+      const mine = legs.filter((x) => x.a === p.id);
+      const run = mine.reduce((s, x) => s + x.run, 0), rox = mine.reduce((s, x) => s + x.rox, 0);
+      const t = mine.reduce((s, x) => s + x.t, 0);
+      return `<article class="ath" style="--c:${p.color}">
+        <h3>${esc(p.id)}<span class="num">${((run + rox) / 1000).toFixed(2)}km</span></h3>
+        <ul class="legs">
+          ${mine.map((x) => `<li><span>${x.i + 1}번 ${x.s.name}</span><span class="num">${x.run}+${x.rox}m</span></li>`).join("")}
+          <li><span>달리기 / 록스존</span><span class="num">${run}m / ${rox}m</span></li>
+          <li><span>본인 페이스 (km당 ${fmt(Math.round(athletePace(p.id)))})</span><span class="num">${fmt(t)}</span></li>
+          <li><span>60분 목표 (km당 ${fmt(Math.round(need))})</span><span class="num" style="color:var(--good)">${fmt(goalT(run + rox))}</span></li>
+        </ul></article>`;
+    }).join("");
 
     // 페이스 → 바퀴 시간
     const paces = [210, 225, 240, 255].concat(Math.round(pace)).sort((a, b) => a - b).filter((v, i, a) => a.indexOf(v) === i);
