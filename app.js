@@ -99,7 +99,7 @@
 
   // ---------- KPI ----------
   function renderKpis() {
-    const first = roundStats(rounds[0]).total;
+    const first = roundStats(rounds[0]).race;
     const lastStats = roundStats(rounds[rounds.length - 1]);
     const last = lastStats.total;
     const gap = lastStats.race - GOAL;
@@ -108,7 +108,7 @@
       <div class="kpi focus"><div class="label">최근 기록 (${esc(rounds[rounds.length - 1].label)})</div>
         <div class="value num">${fmt(last)}</div><div class="hint">대회 거리 환산 ${fmt(lastStats.race)}</div></div>
       <div class="kpi"><div class="label">첫 측정 대비</div>
-        <div class="value num ${last <= first ? "good" : "bad"}">${fmtDelta(last - first)}</div><div class="hint">${esc(rounds[0].label)} ${fmt(first)}에서</div></div>
+        <div class="value num ${lastStats.race <= first ? "good" : "bad"}">${fmtDelta(lastStats.race - first)}</div><div class="hint">환산 기준, ${esc(rounds[0].label)} ${fmt(first)}에서</div></div>
       <div class="kpi"><div class="label">목표까지 (환산 기준)</div>
         <div class="value num ${gap <= 0 ? "good" : "bad"}">${gap <= 0 ? "달성" : fmt(gap)}</div>
         <div class="hint">${gap > 0 ? `구간당 약 ${Math.ceil(gap / 8)}초 단축` : `${fmt(-gap)} 여유`}</div></div>
@@ -400,12 +400,12 @@
     const a = roundStats(first), b = roundStats(last);
     const gap = b.race - GOAL;
 
-    out.push(["up", `전체 <b>${fmt(a.total)} → ${fmt(b.total)}</b>로 ${fmt(a.total - b.total)} 줄었습니다. 이 중 스테이션이 ${fmt(a.st - b.st)}, 달리기가 ${fmt(a.r8 + a.r2 - b.r8 - b.r2)}입니다. 기술이 붙으면서 스테이션에서 가장 크게 줄었습니다.`]);
+    out.push(["up", `대회 거리(달리기 8km)로 환산하면 <b>${fmt(a.race)} → ${fmt(b.race)}</b>로 ${fmt(a.race - b.race)} 줄었습니다. 이 중 스테이션이 ${fmt(a.st - b.st)}, 달리기가 ${fmt(raceRunSec(a) - raceRunSec(b))}입니다. 기술이 붙으면서 스테이션에서 가장 크게 줄었습니다.`]);
 
     const km = roundRunKm(last);
     out.push(["info", km === 8
       ? `${esc(last.label)}는 달리기 총 8km로 대회와 거리가 같아 환산 없이 비교합니다.`
-      : `${esc(last.label)}는 달리기 총 ${km}km라 (1~3차는 스키 구간 앞 달리기 1000m), 대회 거리 8km로 맞추면 <b>${fmt(b.race)}</b>에 해당합니다. 목표 비교는 이 환산 기록으로 합니다.`]);
+      : `${esc(last.label)}는 연습 거리 기준 달리기 총 ${km}km라, 대회 거리 8km로 맞추면 <b>${fmt(b.race)}</b>에 해당합니다. 목표 비교는 이 환산 기록으로 합니다.`]);
 
     // 가장 많이 줄어든 스테이션
     const deltas = D.stations.map((s, i) => ({ s, d: legTotal(last.legs[i]) - legTotal(first.legs[i]), i }));
@@ -419,13 +419,19 @@
     // 티어
     const tierStations = D.stations.map((s, i) => ({ s, k: tierOf(toSec(last.legs[i].station), D.tiers.station[s.id]) }));
     const strong = tierStations.filter((x) => x.k === "S").map((x) => x.s.name);
-    const weak = tierStations.filter((x) => x.k === "C" || x.k === "B").map((x) => `${x.s.name}(${x.k})`);
+    // S티어가 아닌 종목은 S 기준까지 남은 시간
+    const weak = tierStations.filter((x) => x.k !== "S").map((x) => {
+      const gapS = toSec(last.legs[x.s ? D.stations.indexOf(x.s) : 0].station) - toSec(D.tiers.station[x.s.id].S);
+      return `${x.s.name} ${x.k}티어 (S까지 ${fmt(gapS)})`;
+    });
     if (strong.length) out.push(["up", `혼성 릴레이 기준 S티어 종목: <b>${strong.join(", ")}</b>. 이미 엘리트 수준이라 지금 페이스를 유지하는 게 목표입니다.`]);
-    if (weak.length) out.push(["fix", `B·C티어 종목: <b>${weak.join(", ")}</b>. 티어를 한 단계만 올려도 시간이 가장 크게 줄어드는 곳입니다.`]);
+    if (weak.length) out.push(["fix", `아직 S티어가 아닌 종목: <b>${weak.join(", ")}</b>. 남은 시간을 가장 많이 줄일 수 있는 곳입니다.`]);
     const est = estimate();
     out.push(["fix", `서울 코스는 달리기 ${(courseRunM() / 1000).toFixed(2)}km에 록스존 ${(courseRoxM() / 1000).toFixed(2)}km가 더해져 전체 이동이 ${courseKm()}km입니다. 지금 페이스면 대회 예상 <b>${fmt(est.total)}</b>이고, 스테이션이 그대로라면 60분 안에 들어오기 위해 전체 이동을 <b>km당 ${fmt(Math.round(needPace()))}</b>로 가야 합니다. 록스존은 걷지 말고 조깅으로 이동하세요.`]);
 
-    out.push(["fix", `런지와 월볼은 하체가 지친 상태에서 하는 마지막 두 스테이션이라 시간이 가장 많이 걸립니다. 런지는 보폭을 일정하게 유지하고, 월볼은 10~15회 단위로 쉬는 지점을 미리 정해 두면 줄일 여지가 큽니다.`]);
+    if (tierOf(toSec(last.legs[7].station), D.tiers.station.wallball) !== "S") {
+      out.push(["fix", `월볼은 하체가 지친 상태에서 하는 마지막 스테이션입니다. 10~15개 단위로 쉬는 지점을 미리 정해 두고, 쉬는 시간은 숨 3~4번으로 짧게 가져가세요.`]);
+    }
 
     // 뒤 달리기 (스테이션 직후) km당 페이스
     const pace2 = (r) => {
@@ -525,7 +531,7 @@
 
   // ---------- 목표 스플릿 ----------
   function renderTarget() {
-    const ref = D.rounds[D.rounds.length - 1];
+    const ref = D.rounds.filter((r) => !r.runDist).pop();
     let sumNow = 0, sumT = 0;
     const rows = D.target.map((t, i) => {
       const now = legTotal(ref.legs[i]), tgt = legTotal(t);
