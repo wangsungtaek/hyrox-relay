@@ -182,26 +182,34 @@
 
   // ---------- 스테이션 표 ----------
   function renderStationTable() {
-    const fmtDist = (r) => `${r.runDist || 800}+${r.run2Dist || 200}`;
-    const head = `<thead><tr><th>스테이션</th>${rounds.map((r) => `<th>${esc(r.label)} <small>${fmtDist(r)}m</small></th>`).join("")}<th>첫→최근</th></tr></thead>`;
+    // 회차·구간마다 달리기 거리가 달라서 칸의 큰 숫자는 구간 달리기를 1km로 맞춘 환산 시간
+    const legDist = (l, i, r) => {
+      const d1 = runDist(l, i, r), d2 = l.run200 ? run2Dist(l, r) : 0;
+      return d2 ? `${d1}+${d2}m` : `${d1}m`;
+    };
+    const head = `<thead><tr><th>스테이션</th>${rounds.map((r) => `<th>${esc(r.label)}</th>`).join("")}<th>첫→최근</th></tr></thead>`;
     const body = D.stations.map((s, i) => {
-      const times = rounds.map((r) => legTotal(r.legs[i]));
+      const times = rounds.map((r) => Math.round(legRace(r.legs[i], i, r)));
       const best = Math.min(...times);
       const cells = rounds.map((r, k) => {
         const l = r.legs[i];
+        const raw = legTotal(l);
         return `<td><div class="cell ${times[k] === best ? "best" : ""}">
           <span class="t">${fmt(times[k])}</span>
-          <span class="m">${chip(l.a)} 스테이션 ${l.station || "-"}</span></div></td>`;
+          <span class="m">${chip(l.a)} 스테이션 ${l.station || "-"}</span>
+          <span class="m">실측 ${fmt(raw)} · 달리기 ${legDist(l, i, r)}</span></div></td>`;
       }).join("");
       const d = times[times.length - 1] - times[0];
       return `<tr><td class="st">${s.name}<small>${s.en}</small></td>${cells}
         <td><span class="delta ${d < 0 ? "good" : d > 0 ? "bad" : ""}">${fmtDelta(d)}</span></td></tr>`;
     }).join("");
-    const tot = rounds.map((r) => roundStats(r).total);
-    const foot = `<tfoot><tr><td>합계</td>${tot.map((t) => `<td class="num" style="font-size:20px">${fmt(t)}</td>`).join("")}
+    const st = rounds.map(roundStats);
+    const tot = st.map((x) => x.race);
+    const foot = `<tfoot><tr><td>합계<small style="display:block;font-weight:400;color:var(--muted)">환산 / 실측</small></td>${st.map((x) => `<td><span class="num" style="font-size:20px">${fmt(x.race)}</span><small style="display:block;font-weight:400;color:var(--muted)">실측 ${fmt(x.total)} · ${roundRunKm(rounds[st.indexOf(x)])}km</small></td>`).join("")}
       <td><span class="delta good">${fmtDelta(tot[tot.length - 1] - tot[0])}</span></td></tr></tfoot>`;
     $("stationTable").innerHTML = head + `<tbody>${body}</tbody>` + foot;
   }
+
 
   // ---------- 티어 ----------
   function tierOf(sec, t) {
@@ -408,7 +416,7 @@
       : `${esc(last.label)}는 연습 거리 기준 달리기 총 ${km}km라, 대회 거리 8km로 맞추면 <b>${fmt(b.race)}</b>에 해당합니다. 목표 비교는 이 환산 기록으로 합니다.`]);
 
     // 가장 많이 줄어든 스테이션
-    const deltas = D.stations.map((s, i) => ({ s, d: legTotal(last.legs[i]) - legTotal(first.legs[i]), i }));
+    const deltas = D.stations.map((s, i) => ({ s, d: Math.round(legRace(last.legs[i], i, last) - legRace(first.legs[i], i, first)), i }));
     const topUp = deltas.slice().sort((x, y) => x.d - y.d).slice(0, 2);
     out.push(["up", topUp.map((x) => `<b>${x.s.name}</b> ${fmtDelta(x.d)}`).join(", ") + " 구간이 가장 많이 좋아졌습니다."]);
 
