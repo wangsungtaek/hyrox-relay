@@ -223,11 +223,28 @@ table.grid { border-collapse: collapse; width: 100%; min-width: 560px; font-size
 .weight-row input { width: 90px; }
 input, textarea { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
 input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.care { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.care section { background: var(--bg); border-radius: 10px; padding: 14px 16px; min-width: 0; }
-.care h3 { font-size: 15px; margin-bottom: 6px; }
-.care ul { margin: 0; padding-left: 18px; font-size: 14px; }
-.care li + li { margin-top: 4px; }
+.care { display: grid; gap: 16px; }
+.menu-days { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.day { border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.day.now { border-color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
+.day.past { opacity: .55; }
+.day h3 { font-size: 15px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.day .pill { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); }
+.day .pill.load { background: var(--accent-soft); color: var(--accent); }
+.day .pill.race { background: var(--good-soft); color: var(--good); }
+.day .now-pill { margin-top: 0; }
+.day .target { margin: 6px 0 10px; font-size: 12.5px; color: var(--muted); }
+.day .target .g { font-size: 14px; }
+.day dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; font-size: 13.5px; }
+.day dt { color: var(--muted); white-space: nowrap; }
+.day dd { margin: 0; }
+.care-notes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 860px) { .menu-days { grid-template-columns: repeat(2, minmax(0, 1fr)); } .care-notes { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) { .menu-days { grid-template-columns: minmax(0, 1fr); } }
+.care-notes section { background: var(--bg); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.care-notes h3 { font-size: 15px; margin-bottom: 6px; }
+.care-notes ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.care-notes li + li { margin-top: 4px; }
 .care .g { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--accent); }
 
 /* Form */
