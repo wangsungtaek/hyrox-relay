@@ -672,6 +672,75 @@
       </div>`;
   }
 
+  // ---------- 4일 감기 회복 챌린지 ----------
+  const COLD_KEY = "hyrox-cold-challenge";
+  const COLD = [
+    { date: "2026-11-11", day: "수", title: "1일차 · 푹 쉬기", items: [
+      "운동 쉬기 (산책 20분 정도만)",
+      "밤 11시 전에 자서 8~9시간 자기",
+      "물·따뜻한 차 하루 2.5L 이상",
+      "소금물 가글 3번 (아침·점심·자기 전)",
+      "점심·저녁 따뜻한 국물 + 단백질 (닭백숙, 계란죽, 소고기뭇국)",
+      "방 습도 40~60% (가습기나 젖은 수건)"] },
+    { date: "2026-11-12", day: "목", title: "2일차 · 면역 채우기", items: [
+      "아침 체온 재기 (37.5℃ 이상이면 운동 쉬기)",
+      "목 위 증상만 있으면 아주 가볍게 조깅 20분, 아니면 쉬기",
+      "키위 2개 또는 귤 3개 (비타민 C)",
+      "식염수로 코 세척 2번",
+      "기침이 나면 자기 전 꿀 한 스푼",
+      "8시간 이상 자기"] },
+    { date: "2026-11-13", day: "금", title: "3일차 · 로딩 시작", items: [
+      "아침 체온 재기",
+      "증상이 절반 이상 나아졌으면 조깅 15분 + 20초 빠르게 4번",
+      "흰밥·면·떡 위주로 탄수화물 늘리기 (식단 표 참고)",
+      "물·따뜻한 차 2.5L 이상, 소금물 가글",
+      "팀원과 물병·수건 같이 쓰지 않기 (옮기지 않게)",
+      "8시간 이상 자기"] },
+    { date: "2026-11-14", day: "토", title: "4일차 · 최종 점검", items: [
+      "아침 체온 재기",
+      "가볍게 몸 풀기 15분, 무리하지 않기",
+      "저녁 일찍, 익숙한 메뉴로 (매운 것·술 피하기)",
+      "대회 짐에 휴지·마스크·여분 옷 챙기기",
+      "감기약은 약사에게 '내일 경기'라고 말하고 졸리지 않는 것으로",
+      "밤 10시 반 전에 눕기"] },
+  ];
+  function loadCold() { try { return JSON.parse(localStorage.getItem(COLD_KEY) || "{}"); } catch (e) { return {}; } }
+  function saveCold(s) { try { localStorage.setItem(COLD_KEY, JSON.stringify(s)); } catch (e) { /* 저장 불가 시 무시 */ } }
+
+  function renderCold() {
+    const done = loadCold();
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const total = COLD.reduce((s, d) => s + d.items.length, 0);
+    const checked = COLD.reduce((s, d, di) => s + d.items.filter((_, ii) => done[`${di}-${ii}`]).length, 0);
+    const days = COLD.map((d, di) => {
+      const state = today > d.date ? "past" : today === d.date ? "now" : "";
+      const n = d.items.filter((_, ii) => done[`${di}-${ii}`]).length;
+      return `<article class="day cold-day ${state}">
+        <h3>${d.date.slice(5).replace("-", ".")} (${d.day}) ${state === "now" ? `<span class="now-pill">오늘</span>` : ""}<span class="cnt ${n === d.items.length ? "full" : ""}">${n}/${d.items.length}</span></h3>
+        <p class="target">${d.title}</p>
+        <ul class="checks">${d.items.map((t, ii) => {
+          const k = `${di}-${ii}`;
+          return `<li><label><input type="checkbox" data-k="${k}" ${done[k] ? "checked" : ""}><span>${t}</span></label></li>`;
+        }).join("")}</ul>
+      </article>`;
+    }).join("");
+    const pct = Math.round((checked / total) * 100);
+    $("cold").innerHTML = `
+      <div class="cold-progress"><div class="bar"><i style="width:${pct}%"></i></div><span><b>${checked}</b> / ${total} 완료 · ${pct}%</span></div>
+      <div class="cold-days">${days}</div>
+      <div class="care-notes">
+        <section><h3>목 위·아래 기준</h3><ul>
+          <li><b>목 위 증상</b>(콧물, 코막힘, 가벼운 인후통)만 있으면 가벼운 운동은 괜찮음</li>
+          <li><b>목 아래 증상</b>(열, 몸살, 가슴 기침, 설사)이 있으면 운동 쉬기</li>
+          <li>운동 10분 해 보고 더 나빠지면 바로 멈추기</li></ul></section>
+        <section><h3>11.15 아침 출전 점검</h3><ul>
+          <li>체온 37.5℃ 이상, 몸살, 가슴 답답함 중 하나라도 있으면 무리해서 뛰지 않기</li>
+          <li>38℃ 이상 열이 이틀 넘게 가거나 숨이 차면 병원 진료 먼저</li>
+          <li>컨디션이 애매하면 팀과 미리 이야기하고 페이스를 낮춰 완주 목표로</li></ul></section>
+      </div>`;
+  }
+
 
   // ---------- 기록 추가 ----------
   function renderForm() {
@@ -742,6 +811,15 @@
 
   refresh();
   renderForm();
+  renderCold();
+  $("cold").addEventListener("change", (e) => {
+    const k = e.target.dataset && e.target.dataset.k;
+    if (!k) return;
+    const s = loadCold();
+    if (e.target.checked) s[k] = true; else delete s[k];
+    saveCold(s);
+    renderCold();
+  });
   $("weight").addEventListener("input", renderCare);
   $("addForm").addEventListener("submit", onSubmit);
   $("copyJson").addEventListener("click", onCopy);

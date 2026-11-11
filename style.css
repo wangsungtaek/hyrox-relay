@@ -277,3 +277,19 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   .panel { padding: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* 감기 회복 챌린지 */
+.cold { display: grid; gap: 16px; }
+.cold-progress { display: flex; align-items: center; gap: 12px; font-size: 13.5px; color: var(--muted); }
+.cold-progress .bar { flex: 1; height: 10px; border-radius: 999px; background: var(--bg); overflow: hidden; }
+.cold-progress .bar i { display: block; height: 100%; background: var(--good); transition: width .2s; }
+.cold-progress b { font-family: var(--font-display); font-size: 18px; color: var(--ink); }
+.cold-days { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.cold-day .cnt { margin-left: auto; font-family: var(--font-display); font-size: 14px; color: var(--muted); }
+.cold-day .cnt.full { color: var(--good); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.checks label { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; align-items: start; cursor: pointer; }
+.checks input { margin: 2px 0 0; width: 16px; height: 16px; accent-color: var(--good); }
+.checks input:checked + span { color: var(--muted); text-decoration: line-through; }
+@media (max-width: 860px) { .cold-days { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .cold-days { grid-template-columns: minmax(0, 1fr); } }
