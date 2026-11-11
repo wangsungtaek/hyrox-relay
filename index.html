@@ -8,146 +8,77 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=20">
+  <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <div>
-        <p class="eyebrow">HYROX 혼성 릴레이 · 2026.11.15 18:50 출발 · 목표 1시간 언더</p>
+        <p class="eyebrow">HYROX 혼성 릴레이 · 목표 1시간 언더</p>
         <h1>820팀 <span class="h1-sub">Sub-60 릴레이 로그</span></h1>
       </div>
       <div class="dday" id="dday" aria-live="off"></div>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="kpis" id="kpis"></section>
+  <nav class="tabs" aria-label="페이지 구역">
+    <div class="wrap tabs-inner" role="tablist">
+      <button type="button" role="tab" id="tab-record" data-tab="record" aria-controls="main">기록</button>
+      <button type="button" role="tab" id="tab-analysis" data-tab="analysis" aria-controls="main">분석</button>
+      <button type="button" role="tab" id="tab-race" data-tab="race" aria-controls="main">대회</button>
+      <button type="button" role="tab" id="tab-care" data-tab="care" aria-controls="main">컨디션</button>
+    </div>
+  </nav>
 
-    <section class="panel">
+  <main class="wrap" id="main">
+    <section data-tab="record" class="kpis" id="kpis"></section>
+    <section data-tab="record" class="panel">
       <div class="panel-head">
         <h2>총 기록 추이</h2>
-        <p class="sub">주황 실선은 실측(달리기 8.2km), 회색 점선은 대회 거리(8km) 환산, 초록 점선은 목표 60:00.</p>
+        <p class="sub">주황 실측 · 회색 점선 대회 거리 환산 · 초록 목표</p>
       </div>
       <div class="chart" id="trend"></div>
     </section>
-
-    <section class="panel">
+    <section data-tab="record" class="panel">
       <div class="panel-head">
         <h2>어디서 줄었나</h2>
-        <p class="sub">회차별 앞 달리기 · 스테이션 · 뒤 달리기 합계 (실측)</p>
+        <p class="sub">앞 달리기 · 스테이션 · 뒤 달리기 합계 (실측)</p>
       </div>
       <div id="breakdown"></div>
     </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>고스트 레이스</h2>
-        <p class="sub">회차별 기록이 동시에 출발하는 리플레이입니다. 점 색은 그 구간을 뛰는 선수이고, 주황 칸은 스테이션입니다. 공정하게 비교하려고 모든 회차를 대회 거리(구간당 1km) 환산 시간으로 달립니다.</p>
-      </div>
-      <div class="ghost" id="ghost"></div>
-    </section>
-
-    <section class="panel">
+    <section data-tab="record" class="panel">
       <div class="panel-head">
         <h2>스테이션별 구간 기록</h2>
-        <p class="sub">큰 숫자(환산)는 구간 달리기를 대회처럼 1km로 맞춘 시간이고, 실측은 그날 실제로 잰 시간입니다. 1km보다 많거나 적게 달린 구간만 둘이 다르며 주황 글씨로 표시합니다. 회차마다 달린 거리가 달라서(1~3차 800+200m, 스키는 1000+200m, 1차 스키는 1200m 연속, 4차 600+400m, 4차 월볼은 800m) 칸마다 실측 시간과 실제 달린 거리를 함께 적었습니다. 초록 테두리는 거리를 맞춘 환산 시간 기준 최고 기록입니다 (달린 거리만큼 그 구간 평균 페이스로 1km에 맞춤). 같은 기록이면 최근 회차를 표시합니다. "최고 대비"는 최근 회차가 그 스테이션 최고 기록보다 얼마나 느린지입니다.</p>
+        <p class="sub">큰 숫자는 대회 거리(구간당 1km) 환산, 작은 글씨는 실측. 초록 테두리가 최고 기록</p>
+        <details class="more"><summary>환산 방법</summary>
+          <ul>
+            <li>회차마다 달린 거리가 달라서 그 구간 평균 페이스로 1km에 맞췄습니다.</li>
+            <li>1~3차 800+200m (스키 1000+200m, 1차 스키 1200m), 4차 600+400m (월볼 800m)</li>
+            <li>거리가 1km가 아니었던 칸은 실측이 주황 글씨로 나옵니다.</li>
+            <li>같은 기록이면 최근 회차를 최고로 표시합니다.</li>
+            <li>"최고 대비"는 최근 회차가 최고 기록보다 느린 시간입니다.</li>
+          </ul></details>
       </div>
       <div class="table-scroll"><table class="grid" id="stationTable"></table></div>
     </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>혼성 릴레이 티어</h2>
-        <p class="sub">S 엘리트 · A 상위권 · B 평균권 · C 평균 이하. 최근 회차 기록 기준.</p>
-      </div>
-      <div id="tierFinish"></div>
-      <div class="table-scroll"><table class="grid tier-table" id="tierTable"></table></div>
-      <div class="tier-notes" id="tierNotes"></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>국내 대회 혼성 릴레이 기록</h2>
-        <p class="sub">작년·올해 국내 HYROX 혼성 릴레이 전체 팀 기록. 점 하나가 한 팀입니다.</p>
-      </div>
-      <div class="ev-cards" id="evCards"></div>
-      <div class="chart" id="evChart"></div>
-      <div class="tier-notes" id="evNotes"></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>몇 초 줄이면 몇 위?</h2>
-        <p class="sub">대회 예상 기록에서 구간마다 줄일 시간을 슬라이더로 정하면 예상 기록과 국내 대회 순위가 바로 바뀝니다. 기본값은 서울 코스 거리 × 담당 선수 최근 페이스 + 최근 회차 스테이션 기록입니다.</p>
-      </div>
-      <div class="whatif" id="whatif"></div>
-    </section>
-
-    <section class="panel">
+    <section data-tab="record" class="panel">
       <div class="panel-head">
         <h2>선수별</h2>
-        <p class="sub">최근 회차 기준 담당 구간과 달리기 페이스 변화</p>
+        <p class="sub">최근 회차 담당 구간과 페이스 변화</p>
       </div>
       <div class="athletes" id="athletes"></div>
     </section>
-
-    <section class="panel analysis">
+    <section data-tab="record" class="panel">
       <div class="panel-head">
-        <h2>분석 요약</h2>
-        <p class="sub">기록에서 자동으로 뽑은 내용</p>
+        <h2>고스트 레이스</h2>
+        <p class="sub">회차별 기록이 동시에 출발합니다. 점 색은 선수, 주황 칸은 스테이션</p>
       </div>
-      <ul class="insights" id="insights"></ul>
+      <div class="ghost" id="ghost"></div>
     </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>60분 언더 목표 스플릿</h2>
-        <p class="sub">다음 측정 배치 기준, 구간마다 몇 초씩 줄이는 계획 (1~3차와 같은 800m+200m 기준)</p>
-      </div>
-      <div class="table-scroll"><table class="grid target" id="targetTable"></table></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>대회 코스 · KINTEX</h2>
-        <p class="sub">HYROX Seoul 2026 릴레이 흐름과 구간별 거리, 이 코스에 맞춘 시뮬레이션 방법</p>
-      </div>
-      <div class="course-facts" id="courseFacts"></div>
-      <div id="courseFlow"></div>
-      <div class="course-grid">
-        <div class="table-scroll"><table class="grid" id="courseTable"></table></div>
-        <div class="table-scroll"><table class="grid" id="lapTable"></table></div>
-      </div>
-      <h3 class="course-h">선수별 이동 거리</h3>
-      <div class="athletes" id="courseAthletes"></div>
-      <div class="sim" id="courseSim"></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>남은 기간 계획</h2>
-        <p class="sub">오늘 날짜 기준으로 현재 단계가 표시됩니다</p>
-      </div>
-      <ol class="phases" id="phases"></ol>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>식단 · 몸 관리</h2>
-        <p class="sub">대회까지 날짜별 메뉴입니다. 체중을 넣으면 하루 섭취량이 g 단위로 바뀝니다.</p>
-      </div>
-      <div class="weight-row">
-        <label for="weight">체중 (kg)</label>
-        <input id="weight" type="number" min="35" max="130" step="1" value="65" inputmode="numeric">
-      </div>
-      <div class="care" id="care"></div>
-    </section>
-
-    <section class="panel">
+    <section data-tab="record" class="panel">
       <div class="panel-head">
         <h2>새 기록 추가</h2>
-        <p class="sub">이 브라우저에 저장됩니다. 팀과 공유하려면 JSON을 복사해 <code>data.js</code>의 rounds에 붙여 넣고 커밋하세요.</p>
+        <p class="sub">이 브라우저에만 저장됩니다. 공유하려면 JSON을 <code>data.js</code>에 붙여 넣으세요</p>
       </div>
       <form id="addForm" class="add-form" autocomplete="off">
         <div class="form-row">
@@ -172,21 +103,93 @@
         <textarea id="jsonOut" class="json-out" readonly hidden></textarea>
       </form>
     </section>
-    <section class="panel">
+    <section data-tab="analysis" class="panel analysis">
+      <div class="panel-head">
+        <h2>분석 요약</h2>
+        <p class="sub">기록에서 자동으로 뽑은 내용</p>
+      </div>
+      <ul class="insights" id="insights"></ul>
+    </section>
+    <section data-tab="analysis" class="panel">
+      <div class="panel-head">
+        <h2>몇 초 줄이면 몇 위?</h2>
+        <p class="sub">줄일 시간을 정하면 예상 기록과 순위가 바로 바뀝니다</p>
+      </div>
+      <div class="whatif" id="whatif"></div>
+    </section>
+    <section data-tab="analysis" class="panel">
+      <div class="panel-head">
+        <h2>혼성 릴레이 티어</h2>
+        <p class="sub">S 엘리트 · A 상위권 · B 평균권 · C 평균 이하</p>
+      </div>
+      <div id="tierFinish"></div>
+      <div class="table-scroll"><table class="grid tier-table" id="tierTable"></table></div>
+      <div class="tier-notes" id="tierNotes"></div>
+    </section>
+    <section data-tab="analysis" class="panel">
+      <div class="panel-head">
+        <h2>국내 대회 혼성 릴레이 기록</h2>
+        <p class="sub">작년·올해 국내 혼성 릴레이. 점 하나가 한 팀</p>
+      </div>
+      <div class="ev-cards" id="evCards"></div>
+      <div class="chart" id="evChart"></div>
+      <div class="tier-notes" id="evNotes"></div>
+    </section>
+    <section data-tab="analysis" class="panel">
+      <div class="panel-head">
+        <h2>60분 언더 목표 스플릿</h2>
+        <p class="sub">구간마다 줄일 시간 (800+200m 기준)</p>
+      </div>
+      <div class="table-scroll"><table class="grid target" id="targetTable"></table></div>
+    </section>
+    <section data-tab="race" class="panel">
+      <div class="panel-head">
+        <h2>대회 코스 · KINTEX</h2>
+        <p class="sub">HYROX Seoul 2026 릴레이 흐름과 구간별 거리</p>
+      </div>
+      <div class="course-facts" id="courseFacts"></div>
+      <div id="courseFlow"></div>
+      <div class="course-grid">
+        <div class="table-scroll"><table class="grid" id="courseTable"></table></div>
+        <div class="table-scroll"><table class="grid" id="lapTable"></table></div>
+      </div>
+      <h3 class="course-h">선수별 이동 거리</h3>
+      <div class="athletes" id="courseAthletes"></div>
+      <div class="sim" id="courseSim"></div>
+    </section>
+    <section data-tab="race" class="panel">
+      <div class="panel-head">
+        <h2>남은 기간 계획</h2>
+        <p class="sub">지금 단계가 강조됩니다</p>
+      </div>
+      <ol class="phases" id="phases"></ol>
+    </section>
+    <section data-tab="care" class="panel">
       <div class="panel-head">
         <h2>4일 감기 회복 챌린지</h2>
-        <p class="sub">11.11–14 나흘 동안 매일 체크하는 감기 회복 루틴입니다. 체크 표시는 이 브라우저에 저장됩니다. 감기는 보통 7~10일 가므로 4일 안에 완전히 낫는다고 장담할 수는 없지만, 대회 날 컨디션을 최대한 끌어올리는 데 초점을 맞췄습니다.</p>
+        <p class="sub">11.11–14 매일 체크 · 이 브라우저에 저장</p>
       </div>
       <div class="cold" id="cold"></div>
+    </section>
+    <section data-tab="care" class="panel">
+      <div class="panel-head">
+        <h2>식단 · 몸 관리</h2>
+        <p class="sub">체중을 넣으면 g 단위로 바뀝니다</p>
+      </div>
+      <div class="weight-row">
+        <label for="weight">체중 (kg)</label>
+        <input id="weight" type="number" min="35" max="130" step="1" value="65" inputmode="numeric">
+      </div>
+      <div class="care" id="care"></div>
     </section>
   </main>
 
   <footer class="wrap foot">
-    <p>측정 방식: 각 구간 앞 달리기 → 스테이션 → 뒤 달리기. 1~3차는 800m+200m (스키 구간만 앞 1000m, 1차 스키 구간은 1200m를 한 번에), 11월 9일부터 600m+400m. 대회 거리 환산은 구간당 달리기를 1km로 맞춘 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
+    <p>환산 = 구간당 달리기를 1km로 맞춘 값. 록스존 이동·교대 시간은 빠져 있습니다.</p>
   </footer>
 
-  <script src="data.js?v=20"></script>
-  <script src="events.js?v=20"></script>
-  <script src="app.js?v=20"></script>
+  <script src="data.js?v=23"></script>
+  <script src="events.js?v=23"></script>
+  <script src="app.js?v=23"></script>
 </body>
 </html>

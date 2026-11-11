@@ -65,6 +65,7 @@
   }
 
   let rounds = [];
+  const narrow = () => window.innerWidth < 560;
 
   function refresh() {
     rounds = D.rounds.concat(loadExtra());
@@ -138,7 +139,7 @@
   function renderTrend() {
     const totals = rounds.map((r) => roundStats(r).total);
     const races = rounds.map((r) => roundStats(r).race);
-    const W = 640, H = 260, L = 52, R = 24, T = 24, B = 34;
+    const W = narrow() ? 400 : 640, H = narrow() ? 240 : 260, L = 52, R = 24, T = 24, B = 34;
     const lo = Math.floor((Math.min(GOAL, ...races) - 120) / 60) * 60;
     const hi = Math.ceil((Math.max(...totals) + 60) / 60) * 60;
     const IN = 36;
@@ -290,7 +291,7 @@
     const seen = G.events.filter((e) => e.t <= G.t);
     $("gLog").innerHTML = seen.length
       ? seen.slice(-5).reverse().map((e) => `<li class="${e.good ? "good" : ""}"><time>${fmt(e.t)}</time><span>${e.text}</span></li>`).join("")
-      : `<li class="muted"><span>재생하면 추월 장면과 완주 기록이 여기에 나옵니다. 이번 비교에서 추월은 ${G.events.filter((e) => !e.good).length}번 일어납니다.</span></li>`;
+      : `<li class="muted"><span>재생하면 추월 장면이 여기에 나옵니다 (${G.events.filter((e) => !e.good).length}번)</span></li>`;
   }
   function ghostTick(now) {
     const dt = Math.min((now - G.last) / 1000, 0.1);
@@ -417,10 +418,12 @@
       <tbody>${rows}${runRow}</tbody>`;
 
     $("tierNotes").innerHTML = `
-      <p>스테이션 티어는 개인전 엘리트·평균(약 90분대) 기록을 남녀 평균한 값입니다. 혼성 릴레이만 따로 낸 종목별 통계는 공개된 것이 없어 추정치이며, 남자 선수 기록은 실제보다 유리하게, 여자 선수 기록은 불리하게 나올 수 있습니다.</p>
-      <p>썰매 종목은 연습 장비·바닥·무게가 대회와 다르면 시간이 크게 달라집니다. 연습 기록이 대회보다 빠르게 나올 수 있습니다.</p>
-      <p>완주 티어는 혼성 릴레이 결과(서울 2025 1:14:01이 112팀 중 상위 43%, 엘리트 54분 이내)를 기준으로 잡았습니다. 연습 기록에는 록스존(스테이션 출입 이동)이 빠져 있어, 대회 예상은 서울 코스 전체 이동 거리 ${courseKm()}km를 같은 페이스로 달린다고 보고 계산했습니다 (교대 터치 시간 제외).</p>
-      <p>출처: ${D.tierSources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(" · ")}</p>`;
+      <details class="more"><summary>티어 기준과 출처</summary><ul>
+        <li>스테이션: 개인전 엘리트·평균 기록의 남녀 평균 (릴레이 전용 통계가 없어 추정치)</li>
+        <li>썰매 종목은 연습 장비에 따라 대회보다 빠르게 나올 수 있음</li>
+        <li>완주: 국내 혼성 릴레이 결과 기준, 엘리트 54분 이내</li>
+        <li>출처: ${D.tierSources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(" · ")}</li>
+      </ul></details>`;
   }
 
   // ---------- 국내 대회 기록 ----------
@@ -490,7 +493,7 @@
     }).join("");
 
     // 분포 차트: 행마다 대회, 점마다 팀
-    const W = 640, rowH = 46, L = 74, R = 16, T = 10, B = 28;
+    const W = narrow() ? 420 : 640, rowH = 46, L = 74, R = 16, T = 10, B = 28;
     const H = T + rowH * E.length + B;
     const lo = 50 * 60, hi = 100 * 60;
     const x = (s) => L + ((Math.min(Math.max(s, lo), hi) - lo) / (hi - lo)) * (W - L - R);
@@ -519,10 +522,13 @@
     const runs = ev.teams.map((t) => t[0]), sts = ev.teams.map((t) => t[1]);
     const rr = rankOf(runs, me.run), sr = rankOf(sts, me.station);
     $("evNotes").innerHTML = `
-      <p>60분 안에 들어온 팀은 대회별로 ${E.map((e) => `${e.name} ${e.teams.filter((t) => t[0] + t[1] < GOAL).length}팀`).join(", ")}입니다. <b>1시간 언더는 혼성 릴레이에서 상위 5% 안쪽, 시상권에 가까운 기록</b>입니다.</p>
-      <p>${ev.name} 기준으로 나눠 보면, 우리 스테이션 합계 ${fmt(me.station)}는 ${ev.teams.length}팀 중 <b>${sr}위</b>, 달리기+록스존 예상 ${fmt(me.run)}는 <b>${rr}위</b> 수준입니다. 스테이션은 이미 최상위권이라 달리기와 교대에서 줄이는 것이 1시간 언더의 핵심입니다.</p>
-      <p>우리 대회 예상은 서울 코스 구간마다 담당 선수의 최근 달리기 페이스로 이동 거리를 계산하고 스테이션 ${fmt(me.station)}를 더한 값입니다. 교대 터치 시간은 빠져 있고, 연습 썰매 기록이 대회보다 빠를 수 있어 실제로는 조금 더 걸릴 수 있습니다.</p>
-      <p>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name} 혼성 릴레이</a>`).join(" · ")} (2026.11.03 수집)</p>`;
+      <p><b>1시간 언더 = 상위 5% 안쪽</b> (60분 안 완주: ${E.map((e) => `${e.name} ${e.teams.filter((t) => t[0] + t[1] < GOAL).length}팀`).join(", ")})</p>
+      <p>${ev.name} 기준 스테이션 <b>${sr}위</b>, 달리기+록스존 <b>${rr}위</b>. 달리기와 교대에서 줄이는 게 핵심입니다.</p>
+      <details class="more"><summary>예상 기록 계산법과 출처</summary><ul>
+        <li>서울 코스 구간 거리 × 담당 선수 최근 페이스 + 스테이션 ${fmt(me.station)}</li>
+        <li>교대 시간은 빠져 있어 실제로는 조금 더 걸릴 수 있음</li>
+        <li>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name}</a>`).join(" · ")} (2026.11.03 수집)</li>
+      </ul></details>`;
   }
 
   // ---------- 몇 초 줄이면 몇 위? ----------
@@ -601,7 +607,7 @@
       <p class="wi-diff">기본 예상 ${fmt(base)}에서 <b>${fmtDelta(total - base)}</b></p>
       <p class="wi-goal ${under ? "good" : ""}">${under ? `60분 언더! 여유 ${fmt(pace)}` : `60분까지 ${fmt(-pace)} 더 줄여야 함`}</p>
       <ul class="wi-ranks">${ranks}</ul>
-      <p class="wi-note">교대 시간 기본값은 0초라 실제보다 빠르게 나옵니다. 교대 한 번에 3~5초를 넣어 보면 현실에 가깝습니다.</p>
+      <p class="wi-note">교대 3~5초를 넣으면 현실에 가깝습니다.</p>
       <div class="confetti" id="wiFx" aria-hidden="true"></div>`;
     if (W8.under === false && under) whatIfParty();
     W8.under = under;
@@ -656,20 +662,15 @@
     const a = roundStats(first), b = roundStats(last);
     const gap = b.race - GOAL;
 
-    out.push(["up", `대회 거리(달리기 8km)로 환산하면 <b>${fmt(a.race)} → ${fmt(b.race)}</b>로 ${fmt(a.race - b.race)} 줄었습니다. 이 중 스테이션이 ${fmt(a.st - b.st)}, 달리기가 ${fmt(raceRunSec(a) - raceRunSec(b))}입니다. 기술이 붙으면서 스테이션에서 가장 크게 줄었습니다.`]);
-
-    const km = roundRunKm(last);
-    out.push(["info", km === 8
-      ? `${esc(last.label)}는 달리기 총 8km로 대회와 거리가 같아 환산 없이 비교합니다.`
-      : `${esc(last.label)}는 연습 거리 기준 달리기 총 ${km}km라, 대회 거리 8km로 맞추면 <b>${fmt(b.race)}</b>에 해당합니다. 목표 비교는 이 환산 기록으로 합니다.`]);
+    out.push(["up", `환산 기록 <b>${fmt(a.race)} → ${fmt(b.race)}</b> (스테이션 −${fmt(a.st - b.st)}, 달리기 −${fmt(raceRunSec(a) - raceRunSec(b))})`]);
 
     // 가장 많이 줄어든 스테이션
     const deltas = D.stations.map((s, i) => ({ s, d: Math.round(legRace(last.legs[i], i, last) - legRace(first.legs[i], i, first)), i }));
     const topUp = deltas.slice().sort((x, y) => x.d - y.d).slice(0, 2);
-    out.push(["up", topUp.map((x) => `<b>${x.s.name}</b> ${fmtDelta(x.d)}`).join(", ") + " 구간이 가장 많이 좋아졌습니다."]);
+    out.push(["up", topUp.map((x) => `<b>${x.s.name}</b> ${fmtDelta(x.d)}`).join(", ") + " 가장 많이 좋아짐"]);
 
     if (gap > 0) {
-      out.push(["fix", `환산 기록 기준 목표까지 <b>${fmt(gap)}</b> 남았습니다. 8구간 기준 <b>구간당 ${Math.ceil(gap / 8)}초</b>만 줄이면 됩니다 (록스존 제외 기준).`]);
+      out.push(["fix", `목표까지 <b>${fmt(gap)}</b>, 구간당 <b>${Math.ceil(gap / 8)}초</b>`]);
     }
 
     // 티어
@@ -680,13 +681,13 @@
       const gapS = toSec(last.legs[x.s ? D.stations.indexOf(x.s) : 0].station) - toSec(D.tiers.station[x.s.id].S);
       return `${x.s.name} ${x.k}티어 (S까지 ${fmt(gapS)})`;
     });
-    if (strong.length) out.push(["up", `혼성 릴레이 기준 S티어 종목: <b>${strong.join(", ")}</b>. 이미 엘리트 수준이라 지금 페이스를 유지하는 게 목표입니다.`]);
-    if (weak.length) out.push(["fix", `아직 S티어가 아닌 종목: <b>${weak.join(", ")}</b>. 남은 시간을 가장 많이 줄일 수 있는 곳입니다.`]);
+    if (strong.length) out.push(["up", `S티어: <b>${strong.join(", ")}</b> → 지금 페이스 유지`]);
+    if (weak.length) out.push(["fix", `줄일 여지: <b>${weak.join(", ")}</b>`]);
     const est = estimate();
-    out.push(["fix", `서울 코스는 달리기 ${(courseRunM() / 1000).toFixed(2)}km에 록스존 ${(courseRoxM() / 1000).toFixed(2)}km가 더해져 전체 이동이 ${courseKm()}km입니다. 지금 페이스면 대회 예상 <b>${fmt(est.total)}</b>이고, 스테이션이 그대로라면 60분 안에 들어오기 위해 전체 이동을 <b>km당 ${fmt(Math.round(needPace()))}</b>로 가야 합니다. 록스존은 걷지 말고 조깅으로 이동하세요.`]);
+    out.push(["fix", `서울 코스 예상 <b>${fmt(est.total)}</b>. 60분 안에 들려면 이동 ${courseKm()}km를 <b>km당 ${fmt(Math.round(needPace()))}</b>로`]);
 
     if (tierOf(toSec(last.legs[7].station), D.tiers.station.wallball) !== "S") {
-      out.push(["fix", `월볼은 하체가 지친 상태에서 하는 마지막 스테이션입니다. 10~15개 단위로 쉬는 지점을 미리 정해 두고, 쉬는 시간은 숨 3~4번으로 짧게 가져가세요.`]);
+      out.push(["fix", `월볼: 10~15개 단위로 끊고, 쉬는 건 숨 3~4번만`]);
     }
 
     // 뒤 달리기 (스테이션 직후) km당 페이스
@@ -695,20 +696,21 @@
       r.legs.forEach((l) => { const v = toSec(l.run200); if (v) { t += v; d += run2Dist(l, r); } });
       return d ? (t * 1000) / d : 0;
     };
-    out.push(["info", `스테이션 직후 뒤 달리기 페이스는 km당 ${fmt(Math.round(pace2(first)))} → <b>${fmt(Math.round(pace2(last)))}</b>입니다. 앞 달리기보다 느리므로 스테이션을 끝내고 바로 다시 뛰는 연결 동작을 다듬으면 구간마다 몇 초씩 줄일 수 있습니다.`]);
+    out.push(["info", `스테이션 직후 달리기 km당 ${fmt(Math.round(pace2(first)))} → <b>${fmt(Math.round(pace2(last)))}</b>. 끝나자마자 바로 출발하기`]);
 
     // 다음 측정 배치 변경
     const swaps = D.target.map((t, i) => (t.a !== last.legs[i].a ? i : null)).filter((i) => i != null);
     if (swaps.length) {
       const list = swaps.map((i) => `${D.stations[i].name} ${last.legs[i].a}→<b>${D.target[i].a}</b>`).join(", ");
-      out.push(["info", `다음 측정 배치 변경: ${list}. 새로 맡는 구간은 목표 스플릿을 임시로 잡았고, 첫 기록이 나오면 그 기록을 기준으로 다시 맞춥니다.`]);
+      out.push(["info", `배치 변경: ${list}`]);
     }
 
     // 데이터 메모
-    rounds.forEach((r) => (r.notes || []).forEach((n) => out.push(["info", `${esc(r.label)} 메모: ${esc(n)}`])));
 
     const label = { up: "좋아진 점", fix: "개선", info: "참고" };
-    $("insights").innerHTML = out.map(([k, t]) => `<li><span class="tag ${k}">${label[k]}</span><p>${t}</p></li>`).join("");
+    const memo = rounds.flatMap((r) => (r.notes || []).map((n) => `<li><b>${esc(r.label)}</b> ${esc(n)}</li>`)).join("");
+    $("insights").innerHTML = out.map(([k, t]) => `<li><span class="tag ${k}">${label[k]}</span><p>${t}</p></li>`).join("")
+      + (memo ? `<li class="memo"><details class="more"><summary>회차 메모</summary><ul>${memo}</ul></details></li>` : "");
   }
 
   // ---------- 대회 코스 ----------
@@ -724,11 +726,11 @@
 
     $("courseFlow").innerHTML = `
       <ol class="flow">
-        <li><b>처음 달리기</b><span>교대 구역 출발 → 약 70m 뒤 IN을 처음 지나침 → 한 바퀴 → IN 두 번째에 진입</span></li>
-        <li><b>록스존 진입</b><span>IN에서 스테이션까지 (뒤 번호일수록 멂)</span></li>
-        <li><b>스테이션</b><span>1번 스키부터 8번 월볼까지 왼쪽에서 오른쪽 순서</span></li>
-        <li><b>록스존 퇴장</b><span>스테이션에서 오른쪽 아래 OUT까지 (앞 번호일수록 멂)</span></li>
-        <li><b>교대까지 달리기</b><span>OUT → 오른쪽 변 → 위쪽 직선 → 왼쪽 변 교대 구역에서 하이파이브</span></li>
+        <li><b>처음 달리기</b><span>IN을 한 번 지나치고 두 번째에 진입</span></li>
+        <li><b>록스존 진입</b><span>IN → 스테이션</span></li>
+        <li><b>스테이션</b><span>왼쪽 스키부터 오른쪽 월볼까지</span></li>
+        <li><b>록스존 퇴장</b><span>스테이션 → 오른쪽 아래 OUT</span></li>
+        <li><b>교대까지 달리기</b><span>OUT → 왼쪽 교대 구역 하이파이브</span></li>
       </ol>`;
 
     // 구간별 거리, 담당 선수 페이스 예상, 60분 목표
@@ -769,20 +771,20 @@
         <td class="num">${at(p, c.lapM)}</td><td class="num">${at(p, 630)}</td><td class="num">${at(p, 320)}</td></tr>`).join("") + "</tbody>";
 
     $("courseSim").innerHTML = `
-      <section><h3>코스에 맞춘 시뮬레이션 (구간당)</h3><ol>
-        <li>처음 달리기 <b>630m</b> (1번 스키 구간만 <b>590m</b>)</li>
-        <li>록스존 진입: 위 표의 거리만큼 조깅</li>
+      <section><h3>코스에 맞춘 시뮬레이션</h3><ol>
+        <li>달리기 <b>630m</b> (1번 스키만 590m)</li>
+        <li>록스존 진입 조깅 (표 거리)</li>
         <li>스테이션</li>
-        <li>록스존 퇴장: 위 표의 거리만큼 조깅</li>
-        <li>교대까지 <b>320m</b> 달리고 하이파이브 (8번은 월볼 후 팀원과 함께 결승선)</li></ol>
-        <p style="margin:8px 0 0;font-size:13px;color:var(--muted)">지금의 600 + 스테이션 + 400 구성을 630 + 스테이션 + 320으로 바꾸고, 록스존만 더하면 대회와 거의 같습니다.</p></section>
+        <li>록스존 퇴장 조깅 (표 거리)</li>
+        <li>교대까지 <b>320m</b> → 하이파이브</li></ol></section>
       <section><h3>같이 연습할 것</h3><ul>
-        <li>출발 약 70m 지점에 "IN" 콘을 두고, 처음엔 지나치고 <b>두 번째로 만날 때 진입</b>. 바퀴 수는 본인 책임이고 경기장 랩 화면은 참고용입니다.</li>
-        <li>대기 중인 팀원이 달리는 사람의 바퀴 수를 같이 세기</li>
-        <li>록스존 ${(roxM / 1000).toFixed(2)}km는 걷지 말고 조깅으로</li>
-        <li>다음 주자는 교대 직전에만 교대 구역에 들어갈 수 있으니, 바로 옆 대기 구역에서 준비</li>
-        <li>스테이션에서 나올 때 IN 쪽으로 나가면 2분 페널티</li></ul></section>
-      <p class="src">출처: <a href="${c.mapUrl}" target="_blank" rel="noopener">HYROX 공식 서울 경기장 지도</a> · <a href="${c.eventUrl}" target="_blank" rel="noopener">HYROX Seoul 공식 페이지</a> · <a href="${c.url}" target="_blank" rel="noopener">roxlapper.com 코스 실측 (비공식)</a>. 위치와 흐름은 공식 지도, 미터 거리는 실측 자료를 지도 비율로 나눈 추정치입니다 (2026.11.09 확인).</p>`;
+        <li>IN은 <b>두 번째에</b> 진입, 바퀴 수는 본인 책임</li>
+        <li>대기 팀원이 바퀴 수 같이 세기</li>
+        <li>록스존은 걷지 말고 조깅</li>
+        <li>IN 쪽으로 나가면 2분 페널티</li></ul></section>
+      <details class="more"><summary>출처</summary><ul>
+        <li><a href="${c.mapUrl}" target="_blank" rel="noopener">HYROX 공식 서울 경기장 지도</a> · <a href="${c.eventUrl}" target="_blank" rel="noopener">HYROX Seoul</a> · <a href="${c.url}" target="_blank" rel="noopener">roxlapper.com (비공식)</a></li>
+        <li>미터 거리는 실측 자료를 공식 지도 비율로 나눈 추정치 (2026.11.09 확인)</li></ul></details>`;
   }
 
   // ---------- 목표 스플릿 ----------
@@ -812,13 +814,13 @@
   // ---------- 기간 계획 ----------
   const PHASES = [
     { from: "2026-11-03", to: "2026-11-07", title: "마지막 강도 주",
-      items: ["릴레이 전체 시뮬레이션 1회 (실전 순서·바통 터치 포함)", "800m × 6 인터벌, 목표 페이스 3:00~3:05, 사이 200m 조깅", "취약 스테이션 반복: 런지·월볼은 800m 달린 직후 바로 수행", "스테이션 끝나고 즉시 출발하는 200m 전환 연습"] },
-    { from: "2026-11-08", to: "2026-11-12", title: "테이퍼 (운동량 40~50% 감소)",
-      items: ["11.09 마지막 시뮬레이션 (600m + 스테이션 + 400m), 대회처럼 저녁 시간에", "시뮬레이션에서 교대(터치) 동작까지 실제처럼: 다음 주자는 미리 나와 대기, 터치 즉시 출발", "이후엔 강도만 유지하고 횟수는 절반: 400m × 4, 스테이션 짧게 1세트", "새 운동·무거운 하체 근력은 금지 (근육통이 대회까지 남음)", "신발·장갑·복장 실전과 똑같이 한 번 맞춰 보기"] },
+      items: ["릴레이 전체 시뮬레이션 1회", "800m × 6 인터벌 (3:00~3:05)", "런지·월볼은 달린 직후 바로", "스테이션 끝나고 바로 출발 연습"] },
+    { from: "2026-11-08", to: "2026-11-12", title: "테이퍼 (운동량 절반)",
+      items: ["11.09 마지막 시뮬레이션", "교대 동작까지 실전처럼", "400m × 4, 스테이션 1세트만", "새 운동·무거운 하체 운동 금지", "신발·복장 실전처럼 맞춰 보기"] },
     { from: "2026-11-13", to: "2026-11-14", title: "회복 · 탄수화물 로딩",
-      items: ["20분 가벼운 조깅 + 가속주 4회, 가동성 운동", "탄수화물 위주 식사, 섬유질·기름진 음식 줄이기", "수면 8시간 이상, 음주 금지", "대회장(KINTEX) 교통·주차·막차 확인, 출발 시간은 대회 약 3일 전 공지"] },
-    { from: "2026-11-15", to: "2026-11-15", title: "레이스 데이",
-      items: ["릴레이는 일요일 저녁 경기: 아침·점심은 평소처럼, 출발 3~4시간 전 마지막 식사, 1시간 전 가벼운 간식", "출발 1시간 반 전 도착, 체크인은 본인 신분증 필수 (대리 체크인 불가)", "달리기 코스는 실내 바퀴 수로 1km를 채우므로 각자 바퀴 수를 세고, 동료가 함께 세어 주기", "내 구간 10분 전부터 동적 워밍업 5분, 대기 중 체온 유지", "첫 1km 과속 금지, 스테이션 끝나면 바로 출발"] },
+      items: ["조깅 20분 + 가속주 4회", "탄수화물 위주, 기름진 음식 줄이기", "8시간 이상 자기, 술 금지", "KINTEX 교통·주차 확인"] },
+    { from: "2026-11-15", to: "2026-11-15", title: "레이스 데이 · 18:50 출발",
+      items: ["출발 3~4시간 전 마지막 식사", "1시간 반 전 도착, 신분증 필수", "바퀴 수는 각자 + 팀원이 같이 세기", "내 구간 10분 전 워밍업", "첫 1km 과속 금지"] },
   ];
   function renderPhases() {
     const now = new Date();
@@ -889,25 +891,23 @@
     $("care").innerHTML = `
       <div class="menu-days">${days}</div>
       <div class="care-notes">
-        <section><h3>유지 기간 (11.10–12)</h3><ul>
-          <li>운동량이 줄어드는 기간이라 더 먹을 필요는 없음. 끼니를 거르지 않기</li>
-          <li>물 하루 <span class="g">${(w * 0.035).toFixed(1)}L</span>, 소변이 연한 노란색이면 충분</li>
-          <li>술, 야식, 처음 먹어 보는 보충제는 이번 주엔 쉬기</li></ul></section>
-        <section><h3>탄수화물 로딩 (11.13–14)</h3><ul>
-          <li>흰밥·면·빵·떡 위주로, 현미·잡곡·생채소·튀김은 줄이기</li>
-          <li>몸무게가 0.5~1kg 늘 수 있음. 탄수화물과 함께 물이 저장되는 거라 정상</li>
-          <li>토요일 저녁은 일찍, 익숙한 메뉴로. 매운 음식·회·술 피하기</li></ul></section>
-        <section><h3>대회 당일 (11.15 저녁 경기)</h3><ul>
-          <li>출발 2시간 전 물 500mL, 이후엔 조금씩</li>
-          <li>카페인은 평소 마시는 사람만 출발 45~60분 전 약 ${g(3, 0, "mg")}</li>
-          <li>구간 사이 대기가 길면 물 몇 모금, 배고프면 바나나 반 개나 젤 1개</li>
-          <li>경기 후 30분 안에 탄수화물 + 단백질 ${g(0.3, 0.4)}</li>
-          <li>기름진 음식, 매운 음식, 우유 많이, 처음 먹는 젤·음료는 피하기</li></ul></section>
+        <section><h3>유지 (11.10–12)</h3><ul>
+          <li>더 먹을 필요 없음, 끼니만 거르지 않기</li>
+          <li>물 하루 <span class="g">${(w * 0.035).toFixed(1)}L</span></li>
+          <li>술·야식·새 보충제 쉬기</li></ul></section>
+        <section><h3>로딩 (11.13–14)</h3><ul>
+          <li>흰밥·면·빵·떡 위주</li>
+          <li>잡곡·생채소·튀김 줄이기</li>
+          <li>체중 0.5~1kg 증가는 정상</li></ul></section>
+        <section><h3>대회 당일 (18:50 출발)</h3><ul>
+          <li>2시간 전 물 500mL</li>
+          <li>카페인은 평소 마시는 사람만 45분 전 ${g(3, 0, "mg")}</li>
+          <li>구간 사이엔 물 몇 모금, 바나나 반 개</li>
+          <li>경기 후 30분 안 탄수화물 + 단백질 ${g(0.3, 0.4)}</li></ul></section>
         <section><h3>몸 관리</h3><ul>
-          <li>수면 7~9시간. 전날 잠을 설쳐도 그 전 이틀을 잘 자면 괜찮음</li>
-          <li>매일 10분 폼롤러: 대퇴사두·둔근·종아리</li>
-          <li>오후 3시 이후 커피는 피하기 (대회 당일 제외)</li>
-          <li>유당·글루텐이 안 맞으면 두유, 쌀떡, 밥 위주로 바꾸기</li></ul></section>
+          <li>수면 7~9시간</li>
+          <li>매일 폼롤러 10분 (허벅지·엉덩이·종아리)</li>
+          <li>오후 3시 이후 커피 피하기</li></ul></section>
       </div>`;
   }
 
@@ -970,13 +970,13 @@
       <div class="cold-days">${days}</div>
       <div class="care-notes">
         <section><h3>목 위·아래 기준</h3><ul>
-          <li><b>목 위 증상</b>(콧물, 코막힘, 가벼운 인후통)만 있으면 가벼운 운동은 괜찮음</li>
-          <li><b>목 아래 증상</b>(열, 몸살, 가슴 기침, 설사)이 있으면 운동 쉬기</li>
-          <li>운동 10분 해 보고 더 나빠지면 바로 멈추기</li></ul></section>
-        <section><h3>11.15 아침 출전 점검</h3><ul>
-          <li>체온 37.5℃ 이상, 몸살, 가슴 답답함 중 하나라도 있으면 무리해서 뛰지 않기</li>
-          <li>38℃ 이상 열이 이틀 넘게 가거나 숨이 차면 병원 진료 먼저</li>
-          <li>컨디션이 애매하면 팀과 미리 이야기하고 페이스를 낮춰 완주 목표로</li></ul></section>
+          <li><b>목 위</b>(콧물, 코막힘, 인후통)만 → 가벼운 운동 OK</li>
+          <li><b>목 아래</b>(열, 몸살, 가슴 기침) → 쉬기</li>
+          <li>10분 해 보고 나빠지면 멈추기</li></ul></section>
+        <section><h3>11.15 아침 점검</h3><ul>
+          <li>37.5℃ 이상·몸살이면 무리하지 않기</li>
+          <li>38℃ 이상 이틀 넘으면 병원 먼저</li>
+          <li>애매하면 팀과 상의해 페이스 낮추기</li></ul></section>
       </div>`;
   }
 
@@ -1051,6 +1051,53 @@
   refresh();
   renderForm();
   renderCold();
+
+  // ---------- 탭 ----------
+  const TABS = ["record", "analysis", "race", "care"];
+  function showTab(t, push) {
+    if (!TABS.includes(t)) t = "record";
+    document.querySelectorAll("main > section[data-tab]").forEach((s) => { s.hidden = s.dataset.tab !== t; });
+    document.querySelectorAll(".tabs [data-tab]").forEach((b) => {
+      const on = b.dataset.tab === t;
+      b.setAttribute("aria-selected", on ? "true" : "false");
+      b.tabIndex = on ? 0 : -1;
+    });
+    if (t !== "record" && G.playing) ghostStop();
+    if (push) history.replaceState(null, "", `#${t}`);
+    try { localStorage.setItem("hyrox-tab", t); } catch (e) { /* 무시 */ }
+    scrollSnapToday();
+  }
+  document.querySelectorAll(".tabs [data-tab]").forEach((b) => {
+    b.onclick = () => {
+      showTab(b.dataset.tab, true);
+      const nav = document.querySelector(".tabs");
+      if (nav.getBoundingClientRect().top <= 0) window.scrollTo({ top: nav.offsetTop, behavior: "instant" });
+    };
+    b.onkeydown = (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      const i = (TABS.indexOf(b.dataset.tab) + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length;
+      showTab(TABS[i], true);
+      $(`tab-${TABS[i]}`).focus();
+    };
+  });
+  // 가로로 넘기는 카드 목록은 오늘 카드가 보이도록
+  function scrollSnapToday() {
+    document.querySelectorAll(".menu-days, .cold-days").forEach((box) => {
+      const now = box.querySelector(".day.now");
+      if (now && box.scrollWidth > box.clientWidth) box.scrollLeft = now.offsetLeft - box.offsetLeft;
+    });
+  }
+  let saved = null;
+  try { saved = localStorage.getItem("hyrox-tab"); } catch (e) { /* 무시 */ }
+  showTab(location.hash.slice(1) || saved || "record", false);
+  let wasNarrow = narrow();
+  window.addEventListener("resize", () => {
+    if (narrow() === wasNarrow) return;
+    wasNarrow = narrow();
+    renderTrend();
+    renderEvents();
+  });
+  window.addEventListener("hashchange", () => showTab(location.hash.slice(1), false));
   $("cold").addEventListener("change", (e) => {
     const k = e.target.dataset && e.target.dataset.k;
     if (!k) return;
