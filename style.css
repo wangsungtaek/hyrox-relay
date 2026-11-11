@@ -293,3 +293,54 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .checks input:checked + span { color: var(--muted); text-decoration: line-through; }
 @media (max-width: 860px) { .cold-days { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 520px) { .cold-days { grid-template-columns: minmax(0, 1fr); } }
+
+/* 고스트 레이스 */
+.ghost { display: grid; gap: 14px; }
+.g-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.g-clock { display: flex; align-items: baseline; gap: 10px; }
+.g-clock span { font-family: var(--font-display); font-weight: 700; font-size: 44px; line-height: 1; color: var(--good); font-variant-numeric: tabular-nums; min-width: 3.2ch; }
+.g-clock span.over { color: var(--accent); }
+.g-clock small { font-size: 12.5px; color: var(--muted); }
+.g-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.g-speed { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.g-speed select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 6px; }
+.g-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+.g-chipbox { cursor: pointer; }
+.g-chipbox input { position: absolute; opacity: 0; pointer-events: none; }
+.g-chipbox span { display: inline-block; padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.g-chipbox span small { font-family: var(--font-display); font-weight: 500; font-size: 13px; margin-left: 2px; }
+.g-chipbox input:checked + span { border-color: var(--ink); color: var(--ink); background: var(--bg); }
+.g-chipbox.tg input:checked + span { border-color: var(--good); color: var(--good); background: var(--good-soft); }
+.g-chipbox input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.g-scrub { width: 100%; accent-color: var(--accent); }
+.g-board { display: grid; gap: 8px; }
+.g-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; align-items: center; }
+.g-lab { display: grid; line-height: 1.25; min-width: 0; }
+.g-lab b { font-size: 14px; }
+.g-lab small { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-lab .fin { color: var(--good); font-weight: 600; }
+.g-track { padding-inline: 14px; min-width: 0; }
+.g-head .g-track { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); font-size: 11.5px; color: var(--muted); text-align: center; }
+.g-in { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); height: 30px; }
+.gz { display: grid; grid-template-columns: 38fr 40fr 22fr; border-left: 1px solid var(--line); }
+.gz:last-of-type { border-right: 2px solid var(--ink); }
+.gz i { display: block; background: var(--bg); }
+.gz i.s { background: var(--accent-soft); }
+.g-dot { position: absolute; top: 50%; left: 0; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--surface), 0 1px 4px rgba(0,0,0,.25); z-index: 1; letter-spacing: -.02em; }
+.g-dot.in-st { animation: gpulse 1s ease-in-out infinite; }
+.g-dot.done { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--good); }
+@keyframes gpulse { 50% { box-shadow: 0 0 0 2px var(--surface), 0 0 0 6px var(--accent-soft); } }
+@media (prefers-reduced-motion: reduce) { .g-dot.in-st { animation: none; } }
+.g-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.g-log li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 12px; background: var(--bg); border-radius: 8px; font-size: 13.5px; }
+.g-log li.muted { grid-template-columns: minmax(0, 1fr); color: var(--muted); }
+.g-log li.good { background: var(--good-soft); }
+.g-log time { font-family: var(--font-display); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+.g-log .chip { margin-left: 4px; }
+@media (max-width: 520px) {
+  .g-row { grid-template-columns: 64px minmax(0, 1fr); gap: 6px; }
+  .g-track { padding-inline: 12px; }
+  .g-head .g-track { font-size: 10px; }
+  .g-dot { width: 24px; height: 24px; margin: -12px 0 0 -12px; font-size: 9px; }
+  .g-clock span { font-size: 36px; }
+}

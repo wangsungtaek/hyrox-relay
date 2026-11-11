@@ -72,6 +72,8 @@
     renderKpis();
     renderTrend();
     renderBreakdown();
+    ghostStop();
+    renderGhost();
     renderStationTable();
     renderTiers();
     renderEvents();
@@ -154,6 +156,136 @@
         ${dots}
       </svg>`;
   }
+
+  // ---------- 고스트 레이스 ----------
+  // 각 회차를 환산 시간으로 달리게 한다. 구간 안 위치: 앞 달리기 0~38%, 스테이션 38~78%, 뒤 달리기 78~100%.
+  const ZONE = { r1: [0, 0.38], st: [0.38, 0.78], r2: [0.78, 1] };
+  const G = { lanes: [], on: null, t: 0, speed: 30, playing: false, last: 0, raf: 0, events: [] };
+
+  function ghostPlan(r) {
+    let t = 0;
+    const segs = [];
+    r.legs.forEach((leg, i) => {
+      const p = legParts(leg);
+      const dist = runDist(leg, i, r) + (leg.run200 ? run2Dist(leg, r) : 0);
+      const f = p.r8 + p.r2 ? 1000 / dist : 1;
+      let a = p.r8 * f, b = p.r2 * f;
+      if (!leg.run200) { b = a * 0.2; a *= 0.8; } // 뒤 달리기 기록이 없으면 대회 비율대로 나눔
+      [["r1", a], ["st", p.st], ["r2", b]].forEach(([ph, d]) => { segs.push({ i, ph, a: leg.a, t0: t, d }); t += d; });
+    });
+    return { segs, total: t };
+  }
+  function ghostAt(lane, t) {
+    const { segs, total } = lane.plan;
+    if (t >= total) return { pos: 8, seg: segs[segs.length - 1], done: true };
+    const s = segs.find((g) => t < g.t0 + g.d) || segs[0];
+    const z = ZONE[s.ph];
+    const k = s.d ? (t - s.t0) / s.d : 1;
+    return { pos: s.i + z[0] + (z[1] - z[0]) * k, seg: s, done: false };
+  }
+  function ghostEvents(lanes) {
+    const ev = [];
+    const maxT = Math.max(...lanes.map((l) => l.plan.total));
+    for (let a = 0; a < lanes.length; a++) for (let b = a + 1; b < lanes.length; b++) {
+      let sign = 0;
+      for (let t = 1; t <= maxT; t++) {
+        const pa = ghostAt(lanes[a], t), pb = ghostAt(lanes[b], t);
+        if (pa.done && pb.done) break;
+        const d = pa.pos - pb.pos;
+        const s = Math.abs(d) < 1e-6 ? 0 : d > 0 ? 1 : -1;
+        if (s && sign && s !== sign) {
+          const [w, l, p] = s > 0 ? [lanes[a], lanes[b], pa] : [lanes[b], lanes[a], pb];
+          ev.push({ t, text: `<b>${esc(w.label)}</b>가 <b>${esc(l.label)}</b>를 앞질렀습니다 · ${D.stations[p.seg.i].name} 구간 ${p.seg.ph === "st" ? "스테이션" : "달리기"} 중 ${chip(p.seg.a)}` });
+        }
+        if (s) sign = s;
+      }
+    }
+    lanes.forEach((l) => {
+      if (l.plan.total <= GOAL) ev.push({ t: Math.ceil(l.plan.total), text: `<b>${esc(l.label)}</b> 완주 ${fmt(l.plan.total)} · 60분 언더`, good: true });
+    });
+    return ev.sort((x, y) => x.t - y.t);
+  }
+
+  function renderGhost() {
+    const all = rounds.map((r) => ({ label: r.label, plan: ghostPlan(r) }))
+      .concat([{ label: "목표", plan: ghostPlan({ legs: D.target }), target: true }]);
+    if (!G.on || G.on.some((l) => !all.find((x) => x.label === l))) {
+      G.on = [all[0].label, all[all.length - 2].label, "목표"].filter((v, i, s) => s.indexOf(v) === i);
+    }
+    G.lanes = all.filter((l) => G.on.includes(l.label));
+    G.events = ghostEvents(G.lanes);
+    G.max = Math.max(...G.lanes.map((l) => l.plan.total));
+    G.t = Math.min(G.t, G.max);
+
+    const zones = D.stations.map(() => `<div class="gz"><i class="r"></i><i class="s"></i><i class="r"></i></div>`).join("");
+    $("ghost").innerHTML = `
+      <div class="g-top">
+        <div class="g-clock"><span id="gClock">0:00</span><small>환산 경과 시간</small></div>
+        <div class="g-ctrl">
+          <button type="button" class="btn primary" id="gPlay">재생</button>
+          <button type="button" class="btn" id="gReset">처음으로</button>
+          <label class="g-speed">속도 <select id="gSpeed">${[10, 30, 60, 120].map((s) => `<option value="${s}" ${s === G.speed ? "selected" : ""}>${s}배</option>`).join("")}</select></label>
+        </div>
+      </div>
+      <div class="g-pick" role="group" aria-label="비교할 기록">${all.map((l) => `<label class="g-chipbox ${l.target ? "tg" : ""}"><input type="checkbox" value="${esc(l.label)}" ${G.on.includes(l.label) ? "checked" : ""}><span>${esc(l.label)} <small>${fmt(l.plan.total)}</small></span></label>`).join("")}</div>
+      <input type="range" class="g-scrub" id="gScrub" min="0" max="${Math.ceil(G.max)}" step="1" value="${Math.floor(G.t)}" aria-label="재생 위치">
+      <div class="g-board">
+        <div class="g-row g-head"><div></div><div class="g-track">${D.stations.map((s) => `<span>${s.name}</span>`).join("")}</div></div>
+        ${G.lanes.map((l, k) => `
+        <div class="g-row">
+          <div class="g-lab"><b>${esc(l.label)}</b><small id="gSt${k}"></small></div>
+          <div class="g-track"><div class="g-in">${zones}<span class="g-dot" id="gDot${k}"></span></div></div>
+        </div>`).join("")}
+      </div>
+      <ol class="g-log" id="gLog"></ol>`;
+
+    $("gPlay").onclick = () => { if (G.t >= G.max) G.t = 0; G.playing ? ghostStop() : ghostStart(); };
+    $("gReset").onclick = () => { ghostStop(); G.t = 0; ghostDraw(); };
+    $("gSpeed").onchange = (e) => { G.speed = Number(e.target.value); };
+    $("gScrub").oninput = (e) => { G.t = Number(e.target.value); ghostDraw(); };
+    $("ghost").querySelectorAll(".g-pick input").forEach((cb) => cb.onchange = () => {
+      const on = [...$("ghost").querySelectorAll(".g-pick input:checked")].map((x) => x.value);
+      if (on.length < 1) { cb.checked = true; return; }
+      G.on = on;
+      const was = G.playing; ghostStop(); renderGhost(); if (was) ghostStart();
+    });
+    ghostDraw();
+  }
+
+  function ghostDraw() {
+    $("gClock").textContent = fmt(Math.floor(G.t));
+    $("gClock").className = G.t <= GOAL ? "" : "over";
+    $("gScrub").value = Math.floor(G.t);
+    $("gPlay").textContent = G.playing ? "일시정지" : G.t >= G.max ? "다시 재생" : "재생";
+    const finish = G.lanes.map((l) => l.plan.total).filter((x) => x <= G.t).sort((a, b) => a - b);
+    G.lanes.forEach((l, k) => {
+      const g = ghostAt(l, G.t);
+      const dot = $(`gDot${k}`);
+      dot.style.left = `${(g.pos / 8) * 100}%`;
+      dot.style.background = athleteColor[g.seg.a] || "#666";
+      dot.textContent = g.seg.a;
+      dot.classList.toggle("in-st", !g.done && g.seg.ph === "st");
+      dot.classList.toggle("done", g.done);
+      const st = D.stations[g.seg.i].name;
+      $(`gSt${k}`).innerHTML = g.done
+        ? `<span class="fin">${finish.indexOf(l.plan.total) + 1}위 · ${fmt(l.plan.total)}</span>`
+        : `${st} ${{ r1: "앞 런", st: "중", r2: "뒤 런" }[g.seg.ph]}`;
+    });
+    const seen = G.events.filter((e) => e.t <= G.t);
+    $("gLog").innerHTML = seen.length
+      ? seen.slice(-5).reverse().map((e) => `<li class="${e.good ? "good" : ""}"><time>${fmt(e.t)}</time><span>${e.text}</span></li>`).join("")
+      : `<li class="muted"><span>재생하면 추월 장면과 완주 기록이 여기에 나옵니다. 이번 비교에서 추월은 ${G.events.filter((e) => !e.good).length}번 일어납니다.</span></li>`;
+  }
+  function ghostTick(now) {
+    const dt = Math.min((now - G.last) / 1000, 0.1);
+    G.last = now;
+    G.t = Math.min(G.t + dt * G.speed, G.max);
+    ghostDraw();
+    if (G.t >= G.max) { ghostStop(); return; }
+    G.raf = requestAnimationFrame(ghostTick);
+  }
+  function ghostStart() { G.playing = true; G.last = performance.now(); G.raf = requestAnimationFrame(ghostTick); ghostDraw(); }
+  function ghostStop() { G.playing = false; cancelAnimationFrame(G.raf); if ($("gPlay")) ghostDraw(); }
 
   // ---------- 구성 막대 ----------
   function renderBreakdown() {

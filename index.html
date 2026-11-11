@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=18">
+  <link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
   <header class="top">
@@ -38,6 +38,14 @@
         <p class="sub">회차별 앞 달리기 · 스테이션 · 뒤 달리기 합계 (실측)</p>
       </div>
       <div id="breakdown"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>고스트 레이스</h2>
+        <p class="sub">회차별 기록이 동시에 출발하는 리플레이입니다. 점 색은 그 구간을 뛰는 선수이고, 주황 칸은 스테이션입니다. 공정하게 비교하려고 모든 회차를 대회 거리(구간당 1km) 환산 시간으로 달립니다.</p>
+      </div>
+      <div class="ghost" id="ghost"></div>
     </section>
 
     <section class="panel">
@@ -169,8 +177,8 @@
     <p>측정 방식: 각 구간 앞 달리기 → 스테이션 → 뒤 달리기. 1~3차는 800m+200m (스키 구간만 앞 1000m, 1차 스키 구간은 1200m를 한 번에), 11월 9일부터 600m+400m. 대회 거리 환산은 구간당 달리기를 1km로 맞춘 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
   </footer>
 
-  <script src="data.js?v=18"></script>
-  <script src="events.js?v=18"></script>
-  <script src="app.js?v=18"></script>
+  <script src="data.js?v=19"></script>
+  <script src="events.js?v=19"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>
