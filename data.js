@@ -2,7 +2,7 @@
 // 시간은 "분:초" 문자열. 기록이 없는 칸은 null.
 // run800은 스테이션 앞 달리기(기본 800m, 스키 구간은 1000m). 거리가 다르면 runDist로 적는다.
 window.HYROX_DATA = {
-  event: { name: "HYROX 혼성 릴레이", date: "2026-11-15" },
+  event: { name: "HYROX 혼성 릴레이", date: "2026-11-15", start: "18:50" }, // 출발 시각 (한국 시간)
   goal: "60:00",
 
   athletes: [

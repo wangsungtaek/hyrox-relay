@@ -8,16 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
   <header class="top">
     <div class="wrap top-inner">
       <div>
-        <p class="eyebrow">HYROX 혼성 릴레이 · 2026.11.15 · 목표 1시간 언더</p>
+        <p class="eyebrow">HYROX 혼성 릴레이 · 2026.11.15 18:50 출발 · 목표 1시간 언더</p>
         <h1>820팀 <span class="h1-sub">Sub-60 릴레이 로그</span></h1>
       </div>
-      <div class="dday" id="dday" aria-live="polite"></div>
+      <div class="dday" id="dday" aria-live="off"></div>
     </div>
   </header>
 
@@ -74,6 +74,14 @@
       <div class="ev-cards" id="evCards"></div>
       <div class="chart" id="evChart"></div>
       <div class="tier-notes" id="evNotes"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>몇 초 줄이면 몇 위?</h2>
+        <p class="sub">대회 예상 기록에서 구간마다 줄일 시간을 슬라이더로 정하면 예상 기록과 국내 대회 순위가 바로 바뀝니다. 기본값은 서울 코스 거리 × 담당 선수 최근 페이스 + 최근 회차 스테이션 기록입니다.</p>
+      </div>
+      <div class="whatif" id="whatif"></div>
     </section>
 
     <section class="panel">
@@ -177,8 +185,8 @@
     <p>측정 방식: 각 구간 앞 달리기 → 스테이션 → 뒤 달리기. 1~3차는 800m+200m (스키 구간만 앞 1000m, 1차 스키 구간은 1200m를 한 번에), 11월 9일부터 600m+400m. 대회 거리 환산은 구간당 달리기를 1km로 맞춘 값이며, 록스존 이동·터치 시간은 포함되지 않았습니다.</p>
   </footer>
 
-  <script src="data.js?v=19"></script>
-  <script src="events.js?v=19"></script>
-  <script src="app.js?v=19"></script>
+  <script src="data.js?v=20"></script>
+  <script src="events.js?v=20"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

@@ -77,6 +77,7 @@
     renderStationTable();
     renderTiers();
     renderEvents();
+    renderWhatIf();
     renderAthletes();
     renderInsights();
     renderCourse();
@@ -92,11 +93,26 @@
     const [y, m, d] = D.event.date.split("-").map(Number);
     return Math.round((new Date(y, m - 1, d) - today) / 86400000);
   }
+  // 출발 시각 (한국 시간)
+  const START = new Date(`${D.event.date}T${D.event.start || "00:00"}:00+09:00`);
+  let ddayTimer = 0;
+  function countdownText() {
+    const s = Math.floor((START - Date.now()) / 1000);
+    if (s <= 0) return s > -3 * 3600 ? "출발! 820팀 화이팅" : "대회 종료";
+    const d = Math.floor(s / 86400), hh = Math.floor((s % 86400) / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
+    const p = (v) => String(v).padStart(2, "0");
+    return `${d ? `${d}일 ` : ""}${p(hh)}:${p(mm)}:${p(ss)}`;
+  }
   function renderDday() {
     const n = daysLeft();
     const big = n > 0 ? `D-${n}` : n === 0 ? "D-DAY" : `D+${-n}`;
-    const small = n > 0 ? `${D.event.date.replace(/-/g, ".")} 대회까지<br>${n}일 남음` : n === 0 ? "오늘이 대회 날" : "대회 종료";
-    $("dday").innerHTML = `<span class="big">${big}</span><span class="small">${small}</span>`;
+    const when = `${D.event.date.slice(5).replace("-", ".")} (일) ${D.event.start || ""} 출발까지`;
+    $("dday").innerHTML = `<span class="big">${big}</span><span class="small">${when}<span class="cd" id="cd">${countdownText()}</span></span>`;
+    clearInterval(ddayTimer);
+    ddayTimer = setInterval(() => {
+      const el = $("cd");
+      if (el) el.textContent = countdownText();
+    }, 1000);
   }
 
   // ---------- KPI ----------
@@ -507,6 +523,97 @@
       <p>${ev.name} 기준으로 나눠 보면, 우리 스테이션 합계 ${fmt(me.station)}는 ${ev.teams.length}팀 중 <b>${sr}위</b>, 달리기+록스존 예상 ${fmt(me.run)}는 <b>${rr}위</b> 수준입니다. 스테이션은 이미 최상위권이라 달리기와 교대에서 줄이는 것이 1시간 언더의 핵심입니다.</p>
       <p>우리 대회 예상은 서울 코스 구간마다 담당 선수의 최근 달리기 페이스로 이동 거리를 계산하고 스테이션 ${fmt(me.station)}를 더한 값입니다. 교대 터치 시간은 빠져 있고, 연습 썰매 기록이 대회보다 빠를 수 있어 실제로는 조금 더 걸릴 수 있습니다.</p>
       <p>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name} 혼성 릴레이</a>`).join(" · ")} (2026.11.03 수집)</p>`;
+  }
+
+  // ---------- 몇 초 줄이면 몇 위? ----------
+  const W8 = { cut: Array(8).fill(0), pace: 0, tz: 0, under: null };
+  function whatIfBase() {
+    const last = rounds[rounds.length - 1];
+    return courseLegs().map((c) => {
+      const st = legParts(last.legs[c.i]).st;
+      const exact = rounds.map((r) => legRace(r.legs[c.i], c.i, r));
+      const gap = Math.max(0, Math.round(exact[exact.length - 1] - Math.min(...exact)));
+      return { ...c, st, base: c.t + st, gap };
+    });
+  }
+  function renderWhatIf() {
+    const legs = whatIfBase();
+    const row = (x) => `
+      <div class="wi-row">
+        <div class="wi-name"><b>${x.s.name}</b>${chip(x.a)}<small>${fmt(x.base)}</small></div>
+        <input type="range" min="0" max="120" step="1" value="${W8.cut[x.i]}" data-i="${x.i}" aria-label="${x.s.name} 줄일 시간 (초)">
+        <output id="wiCut${x.i}"></output>
+      </div>`;
+    $("whatif").innerHTML = `
+      <div class="wi-grid">
+        <div class="wi-controls">
+          <div class="wi-presets">
+            <button type="button" class="btn" data-p="best">각 스테이션 최고 기록만 다시 내면?</button>
+            <button type="button" class="btn ghost" data-p="reset">초기화</button>
+          </div>
+          ${legs.map(row).join("")}
+          <div class="wi-row wi-extra">
+            <div class="wi-name"><b>달리기 페이스</b><small>모든 구간 km당</small></div>
+            <input type="range" min="0" max="30" step="1" value="${W8.pace}" id="wiPace" aria-label="km당 빨라지는 초">
+            <output id="wiPaceOut"></output>
+          </div>
+          <div class="wi-row wi-extra">
+            <div class="wi-name"><b>교대 터치</b><small>7번, 한 번에</small></div>
+            <input type="range" min="0" max="15" step="1" value="${W8.tz}" id="wiTz" aria-label="교대 한 번에 걸리는 초">
+            <output id="wiTzOut"></output>
+          </div>
+        </div>
+        <div class="wi-result" id="wiResult" aria-live="polite"></div>
+      </div>`;
+    $("whatif").querySelectorAll('input[data-i]').forEach((el) => el.oninput = () => { W8.cut[Number(el.dataset.i)] = Number(el.value); whatIfDraw(legs); });
+    $("wiPace").oninput = (e) => { W8.pace = Number(e.target.value); whatIfDraw(legs); };
+    $("wiTz").oninput = (e) => { W8.tz = Number(e.target.value); whatIfDraw(legs); };
+    $("whatif").querySelectorAll("[data-p]").forEach((b) => b.onclick = () => {
+      if (b.dataset.p === "best") { W8.cut = legs.map((x) => Math.min(120, x.gap)); }
+      else { W8.cut = Array(8).fill(0); W8.pace = 0; W8.tz = 0; }
+      $("whatif").querySelectorAll('input[data-i]').forEach((el) => { el.value = W8.cut[Number(el.dataset.i)]; });
+      $("wiPace").value = W8.pace; $("wiTz").value = W8.tz;
+      whatIfDraw(legs);
+    });
+    W8.under = null;
+    whatIfDraw(legs);
+  }
+  function whatIfDraw(legs) {
+    const base = legs.reduce((s, x) => s + x.base, 0);
+    const paceCut = Math.round((W8.pace * courseM()) / 1000);
+    const cut = W8.cut.reduce((s, v) => s + v, 0);
+    const total = base - cut - paceCut + W8.tz * 7;
+    legs.forEach((x) => { $(`wiCut${x.i}`).textContent = W8.cut[x.i] ? `−${fmt(W8.cut[x.i])}` : "0:00"; });
+    $("wiPaceOut").textContent = W8.pace ? `−${W8.pace}초` : "0초";
+    $("wiTzOut").textContent = `+${W8.tz}초`;
+    const under = total < GOAL;
+    const E = window.HYROX_EVENTS || [];
+    const ranks = E.map((e) => {
+      const tot = e.teams.map((t) => t[0] + t[1]).sort((a, b) => a - b);
+      const r = rankOf(tot, total);
+      const ahead = tot.filter((x) => x < total).pop();
+      const up = ahead != null ? total - ahead : null;
+      return `<li><span class="ev-n">${e.name}<small>${tot.length}팀</small></span><b>${r}위</b><span class="ev-p">상위 ${Math.max(1, Math.round((r / tot.length) * 100))}%${up != null ? ` · 한 계단 위까지 −${fmt(up)}` : " · 1위"}</span></li>`;
+    }).join("");
+    const pace = (GOAL - total);
+    $("wiResult").innerHTML = `
+      <div class="wi-big ${under ? "good" : ""}"><span>${fmt(total)}</span><small>예상 기록</small></div>
+      <p class="wi-diff">기본 예상 ${fmt(base)}에서 <b>${fmtDelta(total - base)}</b></p>
+      <p class="wi-goal ${under ? "good" : ""}">${under ? `60분 언더! 여유 ${fmt(pace)}` : `60분까지 ${fmt(-pace)} 더 줄여야 함`}</p>
+      <ul class="wi-ranks">${ranks}</ul>
+      <p class="wi-note">교대 시간 기본값은 0초라 실제보다 빠르게 나옵니다. 교대 한 번에 3~5초를 넣어 보면 현실에 가깝습니다.</p>
+      <div class="confetti" id="wiFx" aria-hidden="true"></div>`;
+    if (W8.under === false && under) whatIfParty();
+    W8.under = under;
+  }
+  function whatIfParty() {
+    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const fx = $("wiFx");
+    const colors = D.athletes.map((a) => a.color).concat(["#1f8a5b", "#e2531f"]);
+    fx.innerHTML = Array.from({ length: 48 }, (_, k) => {
+      const c = colors[k % colors.length], x = Math.random() * 100, d = (Math.random() * 0.4).toFixed(2), r = Math.round(Math.random() * 360);
+      return `<i style="left:${x}%;background:${c};animation-delay:${d}s;transform:rotate(${r}deg)"></i>`;
+    }).join("");
   }
 
   // ---------- 선수 카드 ----------

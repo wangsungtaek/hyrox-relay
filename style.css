@@ -344,3 +344,38 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
   .g-dot { width: 24px; height: 24px; margin: -12px 0 0 -12px; font-size: 9px; }
   .g-clock span { font-size: 36px; }
 }
+
+/* 몇 초 줄이면 몇 위? */
+.wi-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.wi-controls { display: grid; gap: 6px; }
+.wi-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.wi-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 52px; gap: 10px; align-items: center; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.wi-row.wi-extra { background: var(--bg); border: 0; border-radius: 8px; padding: 6px 10px; margin-top: 4px; }
+.wi-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; font-size: 14px; }
+.wi-name small { font-family: var(--font-display); font-size: 13px; color: var(--muted); }
+.wi-extra .wi-name small { font-family: var(--font-body); font-size: 11.5px; }
+.wi-row input[type=range] { width: 100%; accent-color: var(--accent); }
+.wi-row output { font-family: var(--font-display); font-weight: 700; font-size: 16px; text-align: right; font-variant-numeric: tabular-nums; color: var(--accent); }
+.wi-result { position: sticky; top: 12px; background: var(--bg); border-radius: 12px; padding: 18px; display: grid; gap: 8px; overflow: hidden; }
+.wi-big { display: flex; align-items: baseline; gap: 10px; }
+.wi-big span { font-family: var(--font-display); font-weight: 700; font-size: 60px; line-height: .95; color: var(--accent); font-variant-numeric: tabular-nums; }
+.wi-big.good span { color: var(--good); }
+.wi-big small { color: var(--muted); font-size: 13px; }
+.wi-diff, .wi-goal, .wi-note { margin: 0; font-size: 14px; }
+.wi-diff b { font-family: var(--font-display); font-size: 17px; }
+.wi-goal { font-weight: 600; color: var(--accent); }
+.wi-goal.good { color: var(--good); }
+.wi-note { font-size: 12.5px; color: var(--muted); }
+.wi-ranks { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 6px; }
+.wi-ranks li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; background: var(--surface); border-radius: 8px; padding: 8px 12px; }
+.wi-ranks .ev-n { font-size: 13.5px; font-weight: 600; }
+.wi-ranks .ev-n small { font-weight: 400; color: var(--muted); margin-left: 6px; }
+.wi-ranks b { font-family: var(--font-display); font-size: 24px; }
+.wi-ranks .ev-p { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; opacity: 0; animation: wifall 1.6s ease-in forwards; }
+@keyframes wifall { 0% { opacity: 1; translate: 0 0; } 100% { opacity: 0; translate: 0 420px; rotate: 540deg; } }
+@media (max-width: 860px) { .wi-grid { grid-template-columns: minmax(0, 1fr); } .wi-result { position: static; } }
+@media (max-width: 520px) { .wi-row { grid-template-columns: 104px minmax(0, 1fr) 44px; gap: 6px; } .wi-big span { font-size: 48px; } }
+
+.dday .cd { display: block; margin-top: 2px; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: .02em; font-variant-numeric: tabular-nums; opacity: 1; }
