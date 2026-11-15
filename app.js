@@ -203,8 +203,8 @@
     let cum = 0;
     const rows = legs.map((x) => {
       cum += x.total;
-      const prac = toSec(last.legs[x.i].station);
-      const d = x.st - prac;
+      const prac = Math.round(legRace(last.legs[x.i], x.i, last));
+      const d = x.total - prac;
       return `<tr><td class="st">${x.s.name}</td><td>${chip(x.a)}</td>
         <td class="num">${fmt(x.run)}</td><td class="num">${x.rox ? fmt(x.rox) : "–"}</td>
         <td class="num">${fmt(x.st)}</td>
@@ -228,7 +228,7 @@
         <div>예상 대비<b class="bad">${fmtDelta(total - est.total)}</b></div>
       </div>
       <div class="table-scroll"><table class="grid race-table">
-        <thead><tr><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>스테이션</th><th>합계</th><th>스테이션<br>${esc(last.label)} 대비</th><th>누적</th></tr></thead>
+        <thead><tr><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>스테이션</th><th>합계</th><th>${esc(last.label)} 대비</th><th>누적</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
       <ul class="race-notes">
         <li>예상 ${fmt(est.total)}보다 <b>${fmtDelta(total - est.total)}</b>: 이동 ${fmtDelta(run + rox - est.run)}, 스테이션 ${fmtDelta(st - est.station)}</li>
@@ -240,6 +240,7 @@
         <li>달리기 = 앞 주자가 교대까지 뛴 거리 + 다음 주자 처음 달리기 (교대 포함)</li>
         <li>록스존 = 스테이션 진입 + 퇴장 이동</li>
         <li>합계 = 달리기 + 록스존 + 스테이션 (교대 포함, 구간 시간)</li>
+        <li>${esc(last.label)} 대비 = 실전 구간 합계 − ${esc(last.label)} 구간 환산 시간 (달리기 1km 기준, 록스존 없음)</li>
         <li>월볼은 공식 스플릿에 록스존·결승 구간이 따로 없어 달리기·스테이션에 포함</li>
         <li>출처: <a href="${R.url}" target="_blank" rel="noopener">Hyranking ${esc(R.name)} 혼성 릴레이</a></li>
       </ul></details>`;
