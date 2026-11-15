@@ -20,6 +20,7 @@
     if (d === 0) return "±0:00";
     return (d < 0 ? "−" : "+") + fmt(Math.abs(d));
   }
+  const fmtH = (s) => (s >= 3600 ? `${Math.floor(s / 3600)}:${fmt(s % 3600).padStart(5, "0")}` : fmt(s));
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
   // ---------- 데이터 ----------
@@ -70,6 +71,7 @@
   function refresh() {
     rounds = D.rounds.concat(loadExtra());
     renderDday();
+    renderRace();
     renderKpis();
     renderTrend();
     renderBreakdown();
@@ -105,6 +107,11 @@
     return `${d ? `${d}일 ` : ""}${p(hh)}:${p(mm)}:${p(ss)}`;
   }
   function renderDday() {
+    if (D.race && Date.now() > START.getTime() + 3 * 3600 * 1000) {
+      const t = raceLegs().reduce((s, x) => s + x.total, 0);
+      $("dday").innerHTML = `<span class="big">${fmtH(t)}</span><span class="small">${esc(D.race.name)} 완주<span class="cd">${D.race.teams}팀 중 ${D.race.rank}위</span></span>`;
+      return;
+    }
     const n = daysLeft();
     const big = n > 0 ? `D-${n}` : n === 0 ? "D-DAY" : `D+${-n}`;
     const when = `${D.event.date.slice(5).replace("-", ".")} (일) ${D.event.start || ""} 출발까지`;
@@ -131,8 +138,10 @@
       <div class="kpi"><div class="label">목표까지 (환산 기준)</div>
         <div class="value num ${gap <= 0 ? "good" : "bad"}">${gap <= 0 ? "달성" : fmt(gap)}</div>
         <div class="hint">${gap > 0 ? `구간당 약 ${Math.ceil(gap / 8)}초 단축` : `${fmt(-gap)} 여유`}</div></div>
-      <div class="kpi"><div class="label">남은 기간</div>
-        <div class="value num">${n}일</div><div class="hint">${D.event.date.replace(/-/g, ".")} 대회</div></div>`;
+      ${D.race ? `<div class="kpi"><div class="label">실전 (서울 2026)</div>
+        <div class="value num">${fmtH(raceLegs().reduce((s, x) => s + x.total, 0))}</div><div class="hint">${D.race.teams}팀 중 ${D.race.rank}위</div></div>`
+      : `<div class="kpi"><div class="label">남은 기간</div>
+        <div class="value num">${n}일</div><div class="hint">${D.event.date.replace(/-/g, ".")} 대회</div></div>`}`;
   }
 
   // ---------- 추이 차트 ----------
@@ -174,6 +183,67 @@
       </svg>`;
   }
 
+  // ---------- 실전 결과 ----------
+  function raceLegs() {
+    const R = D.race;
+    return R.legs.map((l, i) => {
+      const run = toSec(l.run) || 0, rin = toSec(l.rin) || 0, st = toSec(l.st) || 0, rout = toSec(l.rout) || 0;
+      return { ...l, i, s: D.stations[i], run, rox: rin + rout, rin, rout, st, total: run + rin + st + rout };
+    });
+  }
+  function renderRace() {
+    const R = D.race;
+    if (!R) { $("raceSec").hidden = true; return; }
+    const legs = raceLegs();
+    const last = rounds[rounds.length - 1];
+    const sum = (k) => legs.reduce((s, x) => s + x[k], 0);
+    const total = sum("total"), run = sum("run"), rox = sum("rox"), st = sum("st");
+    const est = estimate();
+    const pct = Math.max(1, Math.round((R.rank / R.teams) * 100));
+    let cum = 0;
+    const rows = legs.map((x) => {
+      cum += x.total;
+      const prac = toSec(last.legs[x.i].station);
+      const d = x.st - prac;
+      return `<tr><td class="st">${x.s.name}</td><td>${chip(x.a)}</td>
+        <td class="num">${fmt(x.run)}</td><td class="num">${x.rox ? fmt(x.rox) : "–"}</td>
+        <td class="num"><b>${fmt(x.st)}</b></td>
+        <td><span class="delta ${d < 0 ? "good" : d > 0 ? "bad" : ""}">${fmtDelta(d)}</span></td>
+        <td class="num">${fmtH(cum)}</td></tr>`;
+    }).join("");
+    const diffs = legs.map((x) => ({ n: x.s.name, d: x.st - toSec(last.legs[x.i].station) }));
+    const slower = diffs.filter((x) => x.d > 20).sort((a, b) => b.d - a.d).slice(0, 3);
+    const faster = diffs.filter((x) => x.d < 0);
+    const longRox = legs.map((x) => [[`${x.s.name} 진입`, x.rin], [`${x.s.name} 퇴장`, x.rout]]).flat().sort((a, b) => b[1] - a[1]).slice(0, 2);
+    $("race").innerHTML = `
+      <div class="race-hero">
+        <div class="rh-time">${fmtH(total)}</div>
+        <div class="rh-rank"><b>${R.teams}팀 중 ${R.rank}위</b><span>상위 ${pct}% · ${R.date.slice(5).replace("-", ".")} ${R.start} 출발</span></div>
+      </div>
+      <div class="race-stats">
+        <div>달리기<b>${fmt(run)}</b></div>
+        <div>록스존<b>${fmt(rox)}</b></div>
+        <div>스테이션<b>${fmt(st)}</b></div>
+        <div>예상 대비<b class="bad">${fmtDelta(total - est.total)}</b></div>
+      </div>
+      <div class="table-scroll"><table class="grid race-table">
+        <thead><tr><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>스테이션</th><th>${esc(last.label)} 대비</th><th>누적</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <ul class="race-notes">
+        <li>예상 ${fmt(est.total)}보다 <b>${fmtDelta(total - est.total)}</b>: 이동 ${fmtDelta(run + rox - est.run)}, 스테이션 ${fmtDelta(st - est.station)}</li>
+        ${slower.length ? `<li>연습보다 오래 걸린 스테이션: ${slower.map((x) => `<b>${x.n} ${fmtDelta(x.d)}</b>`).join(", ")}</li>` : ""}
+        ${faster.length ? `<li>연습보다 빨랐던 스테이션: ${faster.map((x) => `<b>${x.n} ${fmtDelta(x.d)}</b>`).join(", ")}</li>` : ""}
+        <li>록스존이 길었던 곳: ${longRox.map(([n, t]) => `${n} ${fmt(t)}`).join(", ")}</li>
+      </ul>
+      <details class="more"><summary>기록 읽는 법</summary><ul>
+        <li>달리기 = 앞 주자가 교대까지 뛴 거리 + 다음 주자 처음 달리기 (교대 포함)</li>
+        <li>록스존 = 스테이션 진입 + 퇴장 이동</li>
+        <li>월볼은 공식 스플릿에 록스존·결승 구간이 따로 없어 달리기·스테이션에 포함</li>
+        <li>선수 배치는 대회 전 계획과 같다고 보고 표시</li>
+        <li>출처: <a href="${R.url}" target="_blank" rel="noopener">Hyranking ${esc(R.name)} 혼성 릴레이</a></li>
+      </ul></details>`;
+  }
+
   // ---------- 고스트 레이스 ----------
   // 각 회차를 환산 시간으로 달리게 한다. 구간 안 위치: 앞 달리기 0~38%, 스테이션 38~78%, 뒤 달리기 78~100%.
   const ZONE = { r1: [0, 0.38], st: [0.38, 0.78], r2: [0.78, 1] };
@@ -189,6 +259,15 @@
       let a = p.r8 * f, b = p.r2 * f;
       if (!leg.run200) { b = a * 0.2; a *= 0.8; } // 뒤 달리기 기록이 없으면 대회 비율대로 나눔
       [["r1", a], ["st", p.st], ["r2", b]].forEach(([ph, d]) => { segs.push({ i, ph, a: leg.a, t0: t, d }); t += d; });
+    });
+    return { segs, total: t };
+  }
+  // 실전은 환산 없이 실제 시간: 달리기 → 록스존 진입 + 스테이션 → 록스존 퇴장
+  function racePlan() {
+    let t = 0;
+    const segs = [];
+    raceLegs().forEach((x) => {
+      [["r1", x.run], ["st", x.rin + x.st], ["r2", x.rout]].forEach(([ph, d]) => { segs.push({ i: x.i, ph, a: x.a, t0: t, d }); t += d; });
     });
     return { segs, total: t };
   }
@@ -225,9 +304,10 @@
 
   function renderGhost() {
     const all = rounds.map((r) => ({ label: r.label, plan: ghostPlan(r) }))
-      .concat([{ label: "목표", plan: ghostPlan({ legs: D.target }), target: true }]);
+      .concat([{ label: "목표", plan: ghostPlan({ legs: D.target }), target: true }])
+      .concat(D.race ? [{ label: "실전", plan: racePlan(), real: true }] : []);
     if (!G.on || G.on.some((l) => !all.find((x) => x.label === l))) {
-      G.on = [all[0].label, all[all.length - 2].label, "목표"].filter((v, i, s) => s.indexOf(v) === i);
+      G.on = D.race ? [rounds[rounds.length - 1].label, "목표", "실전"] : [all[0].label, all[all.length - 2].label, "목표"].filter((v, i, s) => s.indexOf(v) === i);
     }
     G.lanes = all.filter((l) => G.on.includes(l.label));
     G.events = ghostEvents(G.lanes);
@@ -244,7 +324,7 @@
           <label class="g-speed">속도 <select id="gSpeed">${[10, 30, 60, 120].map((s) => `<option value="${s}" ${s === G.speed ? "selected" : ""}>${s}배</option>`).join("")}</select></label>
         </div>
       </div>
-      <div class="g-pick" role="group" aria-label="비교할 기록">${all.map((l) => `<label class="g-chipbox ${l.target ? "tg" : ""}"><input type="checkbox" value="${esc(l.label)}" ${G.on.includes(l.label) ? "checked" : ""}><span>${esc(l.label)} <small>${fmt(l.plan.total)}</small></span></label>`).join("")}</div>
+      <div class="g-pick" role="group" aria-label="비교할 기록">${all.map((l) => `<label class="g-chipbox ${l.target ? "tg" : ""} ${l.real ? "rl" : ""}"><input type="checkbox" value="${esc(l.label)}" ${G.on.includes(l.label) ? "checked" : ""}><span>${esc(l.label)} <small>${fmtH(Math.round(l.plan.total))}</small></span></label>`).join("")}</div>
       <input type="range" class="g-scrub" id="gScrub" min="0" max="${Math.ceil(G.max)}" step="1" value="${Math.floor(G.t)}" aria-label="재생 위치">
       <div class="g-board">
         <div class="g-row g-head"><div></div><div class="g-track">${D.stations.map((s) => `<span>${s.name}</span>`).join("")}</div></div>
@@ -270,7 +350,7 @@
   }
 
   function ghostDraw() {
-    $("gClock").textContent = fmt(Math.floor(G.t));
+    $("gClock").textContent = fmtH(Math.floor(G.t));
     $("gClock").className = G.t <= GOAL ? "" : "over";
     $("gScrub").value = Math.floor(G.t);
     $("gPlay").textContent = G.playing ? "일시정지" : G.t >= G.max ? "다시 재생" : "재생";
@@ -285,7 +365,7 @@
       dot.classList.toggle("done", g.done);
       const st = D.stations[g.seg.i].name;
       $(`gSt${k}`).innerHTML = g.done
-        ? `<span class="fin">${finish.indexOf(l.plan.total) + 1}위 · ${fmt(l.plan.total)}</span>`
+        ? `<span class="fin">${finish.indexOf(l.plan.total) + 1}위 · ${fmtH(Math.round(l.plan.total))}</span>`
         : `${st} ${{ r1: "앞 런", st: "중", r2: "뒤 런" }[g.seg.ph]}`;
     });
     const seen = G.events.filter((e) => e.t <= G.t);
@@ -478,17 +558,19 @@
     const E = window.HYROX_EVENTS || [];
     if (!E.length) return;
     const me = estimate();
+    const real = D.race ? raceLegs().reduce((s, x) => s + x.total, 0) : null;
+    const meT = real || me.total, meLabel = real ? "실전" : "대회 예상";
     $("evCards").innerHTML = E.map((e) => {
       const tot = e.teams.map((t) => t[0] + t[1]);
       const n = tot.length;
-      const g = rankOf(tot, GOAL), m = rankOf(tot, me.total);
+      const g = rankOf(tot, GOAL), m = rankOf(tot, meT);
       const pct = (r) => Math.max(1, Math.round((r / n) * 100));
       return `<article class="ev">
         <h3><a href="${e.url}" target="_blank" rel="noopener">${e.name}</a><small>${e.date.replace(/-/g, ".")} · ${n}팀</small></h3>
         <dl><dt>1위</dt><dd>${e.best}</dd><dt>상위 10%</dt><dd>${e.p10}</dd><dt>중간 (50%)</dt><dd>${e.p50}</dd>
           <dt>60분 안 완주</dt><dd>${tot.filter((x) => x < GOAL).length}팀</dd></dl>
         <div class="rank"><span class="goal">목표 ${D.goal}이면 <b>${g}위</b> (상위 ${pct(g)}%)</span>
-          <span class="est">대회 예상 ${fmt(me.total)}이면 <b>${m}위</b> (상위 ${pct(m)}%)</span></div>
+          <span class="est">${meLabel} ${fmtH(meT)}이면 <b>${m}위</b> (상위 ${pct(m)}%)</span></div>
       </article>`;
     }).join("");
 
@@ -513,21 +595,24 @@
     $("evChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="국내 대회 혼성 릴레이 팀 기록 분포">
       ${grid}${rows}
       <line x1="${x(GOAL)}" x2="${x(GOAL)}" y1="${T - 4}" y2="${H - B}" stroke="var(--good)" stroke-width="2" stroke-dasharray="5 4"/>
-      <line x1="${x(me.total)}" x2="${x(me.total)}" y1="${T - 4}" y2="${H - B}" stroke="var(--accent)" stroke-width="2"/>
+      <line x1="${x(meT)}" x2="${x(meT)}" y1="${T - 4}" y2="${H - B}" stroke="var(--accent)" stroke-width="2"/>
       </svg>
-      <div class="legend"><span><i style="background:var(--good)"></i>목표 ${D.goal}</span><span><i style="background:var(--accent)"></i>우리 대회 예상 ${fmt(me.total)}</span><span><i style="background:var(--muted)"></i>참가 팀</span></div>`;
+      <div class="legend"><span><i style="background:var(--good)"></i>목표 ${D.goal}</span><span><i style="background:var(--accent)"></i>우리 ${meLabel} ${fmtH(meT)}</span><span><i style="background:var(--muted)"></i>참가 팀</span></div>`;
 
     // 달리기·스테이션을 나눠서 비교 (가장 최근 대회 기준)
     const ev = E[E.length - 1];
     const runs = ev.teams.map((t) => t[0]), sts = ev.teams.map((t) => t[1]);
-    const rr = rankOf(runs, me.run), sr = rankOf(sts, me.station);
+    const RL = D.race ? raceLegs() : null;
+    const myRun = RL ? RL.reduce((s, x) => s + x.run, 0) : me.run;
+    const mySt = RL ? RL.reduce((s, x) => s + x.st + x.rox, 0) : me.station;
+    const rr = rankOf(runs, myRun), sr = rankOf(sts, mySt);
     $("evNotes").innerHTML = `
       <p><b>1시간 언더 = 상위 5% 안쪽</b> (60분 안 완주: ${E.map((e) => `${e.name} ${e.teams.filter((t) => t[0] + t[1] < GOAL).length}팀`).join(", ")})</p>
-      <p>${ev.name} 기준 스테이션 <b>${sr}위</b>, 달리기+록스존 <b>${rr}위</b>. 달리기와 교대에서 줄이는 게 핵심입니다.</p>
+      <p>${RL ? `${ev.name} 실전: 달리기 <b>${rr}위</b>, 스테이션+록스존 <b>${sr}위</b>` : `${ev.name} 기준 스테이션 <b>${sr}위</b>, 달리기+록스존 <b>${rr}위</b>`}</p>
       <details class="more"><summary>예상 기록 계산법과 출처</summary><ul>
         <li>서울 코스 구간 거리 × 담당 선수 최근 페이스 + 스테이션 ${fmt(me.station)}</li>
         <li>교대 시간은 빠져 있어 실제로는 조금 더 걸릴 수 있음</li>
-        <li>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name}</a>`).join(" · ")} (2026.11.03 수집)</li>
+        <li>출처: ${E.map((e) => `<a href="${e.url}" target="_blank" rel="noopener">Hyranking ${e.name}</a>`).join(" · ")} (2026.11.03, 서울 2026은 11.16 수집)</li>
       </ul></details>`;
   }
 

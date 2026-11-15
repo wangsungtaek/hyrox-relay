@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
   <header class="top">
@@ -31,6 +31,13 @@
   </nav>
 
   <main class="wrap" id="main">
+    <section data-tab="record" class="panel race-panel" id="raceSec">
+      <div class="panel-head">
+        <h2>실전 결과 · HYROX Seoul 2026</h2>
+        <p class="sub">11.15 KINTEX 혼성 릴레이 공식 기록</p>
+      </div>
+      <div id="race"></div>
+    </section>
     <section data-tab="record" class="kpis" id="kpis"></section>
     <section data-tab="record" class="panel">
       <div class="panel-head">
@@ -71,7 +78,7 @@
     <section data-tab="record" class="panel">
       <div class="panel-head">
         <h2>고스트 레이스</h2>
-        <p class="sub">회차별 기록이 동시에 출발합니다. 점 색은 선수, 주황 칸은 스테이션</p>
+        <p class="sub">회차별 기록이 동시에 출발합니다. 연습은 환산 시간, 실전은 록스존 포함 실제 시간</p>
       </div>
       <div class="ghost" id="ghost"></div>
     </section>
@@ -188,8 +195,8 @@
     <p>환산 = 구간당 달리기를 1km로 맞춘 값. 록스존 이동·교대 시간은 빠져 있습니다.</p>
   </footer>
 
-  <script src="data.js?v=23"></script>
-  <script src="events.js?v=23"></script>
-  <script src="app.js?v=23"></script>
+  <script src="data.js?v=25"></script>
+  <script src="events.js?v=25"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>
