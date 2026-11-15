@@ -191,6 +191,27 @@
       return { ...l, i, s: D.stations[i], run, rox: rin + rout, rin, rout, st, total: run + rin + st + rout };
     });
   }
+  // 선수별 실전 합계. 공식 "달리기"에는 앞 주자의 교대까지 달리기가 섞여 있어 코스 거리 비율로 나눈다.
+  function raceByAthlete() {
+    const C = D.course.legs;
+    const acc = Object.fromEntries(D.athletes.map((p) => [p.id, { run: 0, rox: 0, st: 0, m: 0, legs: [] }]));
+    raceLegs().forEach((x, i) => {
+      const prev = i > 0 ? C[i - 1].toTZ : 0, own = C[i].run, inRun = x.rin ? 0 : C[i].in;
+      const den = prev + own + inRun;
+      if (i > 0) acc[D.race.legs[i - 1].a].run += (x.run * prev) / den;
+      const me = acc[x.a];
+      me.run += (x.run * own) / den;
+      me.rox += x.rin + x.rout + (x.run * inRun) / den;
+      me.st += x.st;
+      me.m += own + (i < C.length - 1 ? C[i].toTZ : 0);
+      me.legs.push(x.s.name);
+    });
+    return D.athletes.map((p) => {
+      const a = acc[p.id];
+      const run = Math.round(a.run), rox = Math.round(a.rox);
+      return { ...p, run, rox, st: a.st, total: run + rox + a.st, m: a.m, legs: a.legs };
+    }).filter((a) => a.legs.length);
+  }
   function renderRace() {
     const R = D.race;
     if (!R) { $("raceSec").hidden = true; return; }
@@ -226,6 +247,18 @@
         <div>스테이션<b>${fmt(st)}</b></div>
         <div>예상 대비<b class="bad">${fmtDelta(total - est.total)}</b></div>
       </div>
+      <h3 class="race-h">선수별 기록</h3>
+      <div class="athletes race-ath">${raceByAthlete().map((a) => `
+        <article class="ath" style="--c:${a.color}">
+          <h3>${esc(a.id)}<span class="num">${fmt(a.total)}</span></h3>
+          <p class="cap">${a.legs.join(" · ")}</p>
+          <ul class="legs">
+            <li><span>달리기 <small>${(a.m / 1000).toFixed(2)}km · km당 ${fmt(Math.round((a.run * 1000) / a.m))}</small></span><span class="num">${fmt(a.run)}</span></li>
+            <li><span>록스존</span><span class="num">${fmt(a.rox)}</span></li>
+            <li><span>스테이션</span><span class="num">${fmt(a.st)}</span></li>
+          </ul>
+        </article>`).join("")}</div>
+      <h3 class="race-h">구간별 기록</h3>
       <div class="table-scroll"><table class="grid race-table">
         <thead><tr><th>스테이션</th><th>선수</th><th>달리기</th><th>록스존</th><th>스테이션</th><th>${esc(last.label)} 대비</th><th>누적</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
@@ -238,6 +271,7 @@
       <details class="more"><summary>기록 읽는 법</summary><ul>
         <li>달리기 = 앞 주자가 교대까지 뛴 거리 + 다음 주자 처음 달리기 (교대 포함)</li>
         <li>록스존 = 스테이션 진입 + 퇴장 이동</li>
+        <li>선수별 달리기: 공식 달리기 구간에 앞 주자의 교대까지 달리기(약 320m)가 섞여 있어 코스 거리 비율로 나눈 추정치</li>
         <li>월볼은 공식 스플릿에 록스존·결승 구간이 따로 없어 달리기·스테이션에 포함</li>
         <li>출처: <a href="${R.url}" target="_blank" rel="noopener">Hyranking ${esc(R.name)} 혼성 릴레이</a></li>
       </ul></details>`;
