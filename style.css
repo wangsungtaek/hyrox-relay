@@ -470,7 +470,4 @@ details.more li + li { margin-top: 2px; }
   .race-table th { font-size: 11px; letter-spacing: 0; }
 }
 
-.race-h { font-size: 15px; margin: 4px 0 10px; }
-.race-ath { margin-bottom: 16px; }
-.race-ath .legs small { color: var(--muted); font-size: 11.5px; margin-left: 2px; }
-.race-ath .cap { margin: 2px 0 0; }
+.race-table th { white-space: nowrap; }
