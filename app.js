@@ -1068,6 +1068,61 @@
   }
 
 
+  // ---------- 하이록스화 가이드 ----------
+  function stars(v, big) {
+    return `<span class="stars ${big ? "big" : ""}" role="img" aria-label="5점 만점에 ${v}점"><span style="width:${(v / 5) * 100}%"></span></span>`;
+  }
+  function renderGear() {
+    const G = window.HYROX_GEAR;
+    if (!G) return;
+    const score = (s) => Math.round(G.criteria.reduce((t, c) => t + s.r[c.id] * c.w, 0) * 10) / 10;
+    const all = G.types.flatMap((t) => t.shoes.map((s) => ({ ...s, type: t, score: score(s) })));
+    const ranked = all.slice().sort((a, b) => b.score - a.score);
+    const img = (s, cls) => `<a class="${cls}" href="${s.url}" target="_blank" rel="noopener"><img src="${s.img}" alt="${esc(s.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'noimg',textContent:'이미지 없음'}))"></a>`;
+    $("gearTop").innerHTML = `
+      <ol class="gear-rank">${ranked.map((s, k) => `
+        <li>
+          <span class="gr-n">${k + 1}</span>
+          ${img(s, "gr-img")}
+          <div class="gr-body"><b>${esc(s.name)}</b><small>${esc(s.type.name)} · ${esc(s.price)}</small></div>
+          <div class="gr-score">${stars(s.score)}<span class="num">${s.score.toFixed(1)}</span></div>
+        </li>`).join("")}</ol>
+      <div class="gear-tip">
+        <b>820팀 실전 기준으로 보면</b>
+        <ul>
+          <li>실전에서 푸시·풀이 연습보다 오래 걸렸으니 <b>썰매용 접지 아웃솔</b>이 있는 모델이 유리합니다</li>
+          <li>한 켤레라면 <b>Deviate NITRO 4</b> 또는 <b>Velocity NITRO 5</b>, 기록을 노린다면 대회 날만 <b>Elite 4</b></li>
+          <li>크로스 트레이닝화는 스테이션 훈련용, 대회는 러닝 쪽 모델로</li>
+        </ul>
+      </div>`;
+    $("gearTypes").innerHTML = G.types.map((t) => `
+      <div class="gear-type">
+        <h3>${esc(t.name)}</h3><p class="sub">${esc(t.desc)}</p>
+        <div class="gear-cards">${t.shoes.map((s) => {
+          const sc = score(s);
+          return `<article class="shoe">
+            ${img(s, "shoe-img")}
+            <h4>${esc(s.name)}</h4>
+            <p class="spec">${esc(s.price)} · ${esc(s.weight)} · 드롭 ${esc(s.drop)} · 플레이트 ${esc(s.plate)}</p>
+            <div class="shoe-score">${stars(sc, true)}<span class="num">${sc.toFixed(1)}</span></div>
+            <dl class="shoe-r">${G.criteria.map((c) => `<dt>${c.name}</dt><dd>${stars(s.r[c.id])}<span class="num">${s.r[c.id]}</span></dd>`).join("")}</dl>
+            <p class="pro">＋ ${esc(s.good)}</p>
+            <p class="con">− ${esc(s.bad)}</p>
+            <p class="pick">${esc(s.pick)}</p>
+          </article>`;
+        }).join("")}</div>
+      </div>`).join("");
+    $("gearNotes").innerHTML = `
+      <details class="more"><summary>별점 기준과 출처</summary><ul>
+        <li>종합 = ${G.criteria.map((c) => `${c.name} ${Math.round(c.w * 100)}%`).join(" + ")}</li>
+        <li>리뷰 점수(10점 만점)는 2로 나누고, 점수가 없는 항목은 플레이트·아웃솔·무게·수명·가격으로 매긴 추정치</li>
+        <li>가격은 미국 공식가 기준, 국내 가격과 다를 수 있음 (${G.updated} 조사)</li>
+        <li>Metcon 10은 전작 Metcon 9 평가를 기준으로 함</li>
+        <li>출처: ${G.sources.map((s) => `<a href="${s.url}" target="_blank" rel="noopener">${esc(s.label)}</a>`).join(" · ")}</li>
+        <li>이미지: 각 브랜드 공식 상품 이미지</li>
+      </ul></details>`;
+  }
+
   // ---------- 기록 추가 ----------
   function renderForm() {
     const opts = D.athletes.map((a) => `<option value="${esc(a.id)}">${esc(a.id)}</option>`).join("");
@@ -1138,9 +1193,10 @@
   refresh();
   renderForm();
   renderCold();
+  renderGear();
 
   // ---------- 탭 ----------
-  const TABS = ["record", "analysis", "race", "care"];
+  const TABS = ["record", "analysis", "race", "care", "gear"];
   function showTab(t, push) {
     if (!TABS.includes(t)) t = "record";
     document.querySelectorAll("main > section[data-tab]").forEach((s) => { s.hidden = s.dataset.tab !== t; });

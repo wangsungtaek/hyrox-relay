@@ -1,0 +1,132 @@
+// 하이록스화 가이드 (2026-11-18 조사)
+// 별점(5점)은 아래 sources의 리뷰·사양을 옮긴 것. hyroxhandbook의 10점 평가는 2로 나눔.
+// 리뷰에 점수가 없는 항목은 사양(플레이트·아웃솔·무게·수명·가격)으로 매긴 추정치.
+// 종합 = 달리기 35% + 썰매·접지 25% + 안정성 20% + 내구성 10% + 가성비 10%
+// 이미지는 각 브랜드 공식 상품 이미지 (링크만 걸고 저장하지 않음).
+window.HYROX_GEAR = {
+  updated: "2026-11-18",
+  criteria: [
+    { id: "run", name: "달리기", w: 0.35 },
+    { id: "sled", name: "썰매·접지", w: 0.25 },
+    { id: "stab", name: "안정성", w: 0.2, hint: "런지·월볼·버피" },
+    { id: "dur", name: "내구성", w: 0.1 },
+    { id: "value", name: "가성비", w: 0.1 },
+  ],
+  types: [
+    {
+      id: "race",
+      name: "하이록스 전용 카본",
+      desc: "카본 플레이트 + 썰매용 접지 아웃솔. 기록 단축용 레이스화",
+      shoes: [
+        {
+          name: "PUMA x HYROX Deviate NITRO Elite 4",
+          price: "$260", weight: "194g", drop: "8mm", plate: "카본",
+          img: "https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/314156/01/sv01/fnd/PNA/fmt/png",
+          url: "https://us.puma.com/us/en/pd/puma-x-hyrox-deviate-nitro-elite-4-mens-training-shoes/314156",
+          r: { run: 5, sled: 4.5, stab: 3, dur: 3, value: 2 },
+          good: "가장 가볍고 빠름, 썰매·인조잔디용 돌기 패턴",
+          bad: "비쌈, 수명 500km, 40mm 높은 쿠션은 런지에서 흔들림",
+          pick: "기록을 노리는 레이스 당일용",
+        },
+        {
+          name: "PUMA x HYROX Deviate NITRO 4",
+          price: "$180", weight: "250g", drop: "10mm", plate: "카본",
+          img: "https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/314155/01/sv01/fnd/PNA/fmt/png",
+          url: "https://us.puma.com/us/en/pd/puma-x-hyrox-deviate-nitro-4-mens-shoes/314155",
+          r: { run: 4.5, sled: 4.5, stab: 3.5, dur: 4.5, value: 3.5 },
+          good: "Elite와 같은 썰매 아웃솔, 수명 800km",
+          bad: "Elite보다 56g 무거움",
+          pick: "대부분에게 1순위 (훈련 + 대회 한 켤레)",
+        },
+        {
+          name: "On Cloud X Tempo Pro",
+          price: "$250", weight: "267g", drop: "9mm", plate: "카본",
+          img: "https://images.ctfassets.net/hnk2vsx53n6l/372W5iM3NwVYSOULer5pUR/f6575ea0227d29e5f432eee0393bc1be/d7b1946603c52d741257dc931af0613bdc9758de.png?w=600&h=600&fit=pad&bg=rgb:ffffff&q=85&fm=jpg",
+          url: "https://www.on.com/en-us/products/cloud-x-tempo-pro-m-3mh1033/mens",
+          r: { run: 4.5, sled: 4, stab: 4, dur: 3, value: 2 },
+          good: "중족부 케이지·스트랩으로 썰매·런지 때 발이 덜 밀림",
+          bad: "비쌈, 2026년 8월 출시라 리뷰가 적음",
+          pick: "카본화인데 스테이션 안정감도 원할 때",
+        },
+      ],
+    },
+    {
+      id: "hybrid",
+      name: "플레이트 없는 하이브리드",
+      desc: "러닝화 쿠션 + 하이록스용 접지. 첫 대회·데일리 훈련용",
+      shoes: [
+        {
+          name: "PUMA x HYROX Velocity NITRO 5",
+          price: "$150", weight: "244g", drop: "8mm", plate: "없음",
+          img: "https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_600,h_600/global/313686/02/sv01/fnd/PNA/fmt/png",
+          url: "https://us.puma.com/us/en/pd/puma-x-hyrox-velocity-nitro-5-training-shoes-men-mens-training-shoes/313686",
+          r: { run: 4, sled: 4.5, stab: 4, dur: 4, value: 4.5 },
+          good: "바닥 전체 PUMAGRIP, 잘 휘어서 런지·버피가 편함",
+          bad: "카본화보다 달리기 반발력은 약함",
+          pick: "첫 하이록스, 한 켤레로 다 하고 싶을 때",
+        },
+        {
+          name: "Nike Pegasus 42",
+          price: "$145", weight: "300g", drop: "10mm", plate: "없음",
+          img: "https://static.nike.com/a/images/t_default/u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/acded880-5c9d-4681-bda5-487928c4affc/AIR+ZOOM+PEGASUS+42.png",
+          url: "https://www.nike.com/t/pegasus-42-mens-road-running-shoes-S1bYkOza",
+          r: { run: 4, sled: 3, stab: 3.5, dur: 4.5, value: 4 },
+          good: "튼튼한 데일리 러닝화, 할인이 잦음",
+          bad: "썰매 전용 접지 없음, 무거운 편",
+          pick: "이미 신고 있는 러닝화로 첫 대회",
+        },
+      ],
+    },
+    {
+      id: "plated",
+      name: "플레이트 러닝화",
+      desc: "레이싱·템포 러닝화. 달리기는 빠르지만 썰매 접지는 약함",
+      shoes: [
+        {
+          name: "Saucony Endorphin Speed 5",
+          price: "$130~175", weight: "237g", drop: "8mm", plate: "나일론",
+          img: "https://thekit.wolverineworldwide.com/match/media_lookup/S21007-10_1/?preset=dw-large",
+          url: "https://www.saucony.com/en/endorphin-speed-5/60307M.html",
+          r: { run: 4.5, sled: 2.5, stab: 3, dur: 4, value: 4 },
+          good: "가볍고 빠름, 하이록스 전용 모델보다 저렴",
+          bad: "썰매용 아웃솔이 없어 닳은 잔디에서 미끄러움",
+          pick: "하이록스 전용화 없이 플레이트를 원할 때",
+        },
+      ],
+    },
+    {
+      id: "gym",
+      name: "크로스 트레이닝화",
+      desc: "단단하고 낮은 바닥. 스테이션은 강하지만 8km 달리기는 불리",
+      shoes: [
+        {
+          name: "Reebok Nano X4",
+          price: "$140", weight: "343g", drop: "7mm", plate: "없음",
+          img: "https://www.reebok.com/cdn/shop/files/100253802_SLC_eCom_5bf91f4c-6567-435c-a954-d2144c7e5a0b.jpg?v=1764596993&width=600",
+          url: "https://www.reebok.com/products/reebok-nano-x4-training-shoes-grit-green-alabaster-154862",
+          r: { run: 3, sled: 4, stab: 4.5, dur: 4.5, value: 4.5 },
+          good: "안정성 최상, 1년 넘게 신을 수 있음, 할인가 많음",
+          bad: "무거워서 달리기가 길수록 불리, 발볼이 좁은 편",
+          pick: "스테이션 위주 훈련, 체육관 수업",
+        },
+        {
+          name: "Nike Metcon 10",
+          price: "$150", weight: "-", drop: "-", plate: "없음",
+          img: "https://static.nike.com/a/images/t_web_pw_592_v2/f_auto/u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/07e9d15a-d767-42b0-b383-fd97c3197aa8/M+NIKE+METCON+10.png",
+          url: "https://www.nike.com/t/metcon-10-mens-workout-shoes-WWGl2m1D/HJ1875-010",
+          r: { run: 3, sled: 5, stab: 5, dur: 4, value: 3.5 },
+          good: "썰매·안정성 최고 평가 (전작 Metcon 9 기준)",
+          bad: "달리기 쿠션이 단단함, 통풍이 약함",
+          pick: "무거운 썰매(프로 디비전), 리프팅 위주",
+        },
+      ],
+    },
+  ],
+  sources: [
+    { label: "Roxgrit – Best Shoes for Hyrox 2026 (32켤레 비교)", url: "https://roxgrit.com/best-shoes-for-hyrox/" },
+    { label: "Hyrox Handbook – 썰매·달리기·안정성 평가", url: "https://hyroxhandbook.com/best-shoes-for-hyrox/" },
+    { label: "Hybrid Athlete Club – Best Shoes for HYROX 2026", url: "https://hybridathleteclub.com/best-shoes-for-hyrox" },
+    { label: "PUMA – HYROX 신발 비교", url: "https://us.puma.com/us/en/articles/best-puma-hyrox-shoes" },
+    { label: "T3 – On Cloud X Tempo Pro 출시", url: "https://www.t3.com/active/on-cloud-x-tempo-pro-launch-0626" },
+  ],
+};
