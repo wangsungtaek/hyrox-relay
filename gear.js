@@ -142,6 +142,49 @@ window.HYROX_GEAR = {
       ],
     },
   ],
+  // 청주 근처 HYROX 공식 트레이닝 클럽 (HYROX Training Finder, 2026-11-18 조회).
+  // 거리는 청주시청 기준 직선거리. 코치 개인 연락처는 싣지 않고 공식 페이지로 연결.
+  gyms: {
+    finder: "https://hyrox-training-finder.hyrox.com/gyms?lat=36.647113&lng=127.392361&label=%EC%B2%AD%EC%A3%BC",
+    list: [
+      {
+        name: "짐그라운드 율량점",
+        addr: "청주시 청원구 율량로 100",
+        km: 3.3,
+        tags: ["24시간", "샤워·락커", "주차"],
+        note: "하이록스 시뮬레이션 공간 + 200평 웨이트 존",
+        url: "https://hyrox-training-finder.hyrox.com/gyms/kr/HGY_5QNO0aQd7KNllHUHK379wdB1u",
+        map: "https://map.naver.com/p/search/%EC%A7%90%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%20%EC%9C%A8%EB%9F%89%EC%A0%90",
+      },
+      {
+        name: "짐그라운드 분평점",
+        addr: "청주시 서원구 원마루로 24, 지하 1층",
+        km: 3.6,
+        tags: [],
+        note: "공식 등록 트레이닝 클럽 (상세 정보 미등록)",
+        url: "https://hyrox-training-finder.hyrox.com/gyms/cheongju/HGY_hwB6E7gkajzVCbOjb8AOVrEWn",
+        map: "https://map.naver.com/p/search/%EC%A7%90%EA%B7%B8%EB%9D%BC%EC%9A%B4%EB%93%9C%20%EB%B6%84%ED%8F%89%EC%A0%90",
+      },
+      {
+        name: "바론 크로스핏 (오창)",
+        addr: "청주시 청원구 오창읍 2산단1로 18, 201~203호",
+        km: 10.5,
+        tags: ["Level 1 코치"],
+        note: "크로스핏 박스 + 하이록스 트레이닝",
+        url: "https://hyrox-training-finder.hyrox.com/gyms/cheongjusi-chungcheongbukdo/baron-crossfit-HGY_3Dfer4AKi4VOe7eiVflDcdYi2",
+        map: "https://map.naver.com/p/search/%EB%B0%94%EB%A1%A0%20%ED%81%AC%EB%A1%9C%EC%8A%A4%ED%95%8F%20%EC%98%A4%EC%B0%BD",
+      },
+      {
+        name: "HY5 하이브리드 트레이닝 센터",
+        addr: "세종시 호려울로 29, 706호",
+        km: 25.5,
+        tags: ["세종"],
+        note: "하이브리드 트레이닝 전문",
+        url: "https://hyrox-training-finder.hyrox.com/gyms/sejong/hy5-HGY_otgiiNfxMJX6RugfuVMlkWSGU",
+        map: "https://map.naver.com/p/search/HY5%20%ED%95%98%EC%9D%B4%EB%B8%8C%EB%A6%AC%EB%93%9C%20%ED%8A%B8%EB%A0%88%EC%9D%B4%EB%8B%9D%20%EC%84%BC%ED%84%B0",
+      },
+    ],
+  },
   sources: [
     { label: "Roxgrit – Best Shoes for Hyrox 2026 (32켤레 비교)", url: "https://roxgrit.com/best-shoes-for-hyrox/" },
     { label: "Hyrox Handbook – 썰매·달리기·안정성 평가", url: "https://hyroxhandbook.com/best-shoes-for-hyrox/" },

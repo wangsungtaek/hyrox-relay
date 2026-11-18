@@ -1112,6 +1112,24 @@
           </article>`;
         }).join("")}</div>
       </div>`).join("");
+    const Y = G.gyms;
+    if (Y) {
+      $("gearGyms").innerHTML = `
+        <ol class="gyms">${Y.list.slice().sort((a, b) => a.km - b.km).map((x) => `
+          <li>
+            <div class="gym-head"><b>${esc(x.name)}</b><span class="num">${x.km}km</span></div>
+            <p class="gym-addr">${esc(x.addr)}</p>
+            <p class="gym-note">${esc(x.note)}</p>
+            ${x.tags.length ? `<p class="gym-tags">${x.tags.map((t) => `<span>${esc(t)}</span>`).join("")}</p>` : ""}
+            <p class="gym-links"><a href="${x.url}" target="_blank" rel="noopener">공식 페이지 · 연락처</a><a href="${x.map}" target="_blank" rel="noopener">네이버 지도</a></p>
+          </li>`).join("")}</ol>
+        <details class="more"><summary>조사 기준</summary><ul>
+          <li><a href="${Y.finder}" target="_blank" rel="noopener">HYROX 공식 트레이닝 클럽 찾기</a>에서 청주 반경 25km 결과 (${G.updated} 조회)</li>
+          <li>공식 클럽은 하이록스 코치 교육을 받은 곳으로, 스키·로잉·썰매 등 장비가 갖춰져 있음</li>
+          <li>운영 시간·가격·체험 수업은 공식 페이지 연락처로 확인</li>
+          <li>공식 클럽이 아닌 일반 헬스장·크로스핏 박스도 장비가 있으면 훈련 가능</li>
+        </ul></details>`;
+    }
     $("gearNotes").innerHTML = `
       <details class="more"><summary>별점 기준과 출처</summary><ul>
         <li>종합 = ${G.criteria.map((c) => `${c.name} ${Math.round(c.w * 100)}%`).join(" + ")}</li>

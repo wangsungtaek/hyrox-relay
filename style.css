@@ -519,3 +519,16 @@ details.more li + li { margin-top: 2px; }
   .gr-score { grid-column: 3; }
   .gr-body b { font-size: 13.5px; }
 }
+
+/* 청주 훈련 시설 */
+.gyms { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gyms li { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.gym-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.gym-head b { font-size: 15px; }
+.gym-head .num { font-size: 17px; font-weight: 700; color: var(--accent); white-space: nowrap; }
+.gym-addr, .gym-note, .gym-tags, .gym-links { margin: 0; font-size: 13px; }
+.gym-addr { color: var(--muted); }
+.gym-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.gym-tags span { background: var(--bg); border-radius: 999px; padding: 1px 8px; font-size: 12px; }
+.gym-links { display: flex; gap: 12px; margin-top: 2px; }
+@media (max-width: 640px) { .gyms { grid-template-columns: minmax(0, 1fr); } }
